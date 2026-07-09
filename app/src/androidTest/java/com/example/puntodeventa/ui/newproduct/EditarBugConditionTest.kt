@@ -126,7 +126,8 @@ class EditarBugConditionTest {
             productRepository  = ProductRepository(
                 productDao = db.productDao(),
                 groupDao   = db.customizationGroupDao(),
-                optionDao  = db.customizationOptionDao()
+                optionDao  = db.customizationOptionDao(),
+                database   = db
             ),
             menuId = menuId
         )
@@ -135,7 +136,8 @@ class EditarBugConditionTest {
             productRepository  = ProductRepository(
                 productDao = db.productDao(),
                 groupDao   = db.customizationGroupDao(),
-                optionDao  = db.customizationOptionDao()
+                optionDao  = db.customizationOptionDao(),
+                database   = db
             ),
             categoryRepository = CategoryRepository(db.categoryDao()),
             menuRepository     = MenuRepository(db.menuItemDao()),

@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,7 +76,7 @@ fun ConfigurationScreen(
         )
 
         // Product list area — state machine as per design
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(top = 8.dp)) {
             when {
                 uiState.isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -104,7 +106,10 @@ fun ConfigurationScreen(
                     )
                 }
                 else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+                    ) {
                         items(uiState.filteredProducts, key = { it.id }) { product ->
                             ProductCard(
                                 product = product,
@@ -232,7 +237,8 @@ private fun ActionBarRow(
         modifier = modifier
             .fillMaxWidth()
             .background(CardBackground)
-            .padding(8.dp),
+            .padding(8.dp)
+            .testTag("ActionBarRow"),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Search field — weight(1f) so it fills remaining horizontal space

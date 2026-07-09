@@ -90,7 +90,8 @@ class NuevoProductoPreservationTest {
         val productRepository = ProductRepository(
             productDao = db.productDao(),
             groupDao   = db.customizationGroupDao(),
-            optionDao  = db.customizationOptionDao()
+            optionDao  = db.customizationOptionDao(),
+            database   = db
         )
 
         configViewModel = ConfigurationViewModel(

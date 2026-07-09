@@ -275,7 +275,7 @@
     - **IMPORTANT**: Re-run the SAME tests written in task 6 — do NOT write new tests.
     - **EXPECTED OUTCOME**: All tests PASS (no regressions in create mode or dismiss behavior).
 
-- [-] 8. Checkpoint Bug 2 — all tests pass
+- [x] 8. Checkpoint Bug 2 — all tests pass
   - Run all Bug 2 tests.
   - Ensure tasks 5–7 are all checked off and all assertions green.
   - Commit with message: `fix(editar): wire loadForEdit() and open modal on Editar tap`
@@ -284,7 +284,7 @@
 
 ## Bug 3 — Duplication Shared IDs (Incomplete Deep Copy)
 
-- [ ] 9. Write bug condition exploration test
+- [x] 9. Write bug condition exploration test
   - **Property 1: Bug Condition** — Duplicate Has Fewer Groups Than Original
   - **CRITICAL**: Write this test BEFORE applying the fix. It must FAIL on unfixed code.
   - **GOAL**: Confirm that duplicating a product with ≥1 groups produces a duplicate
@@ -297,7 +297,7 @@
   - Mark complete when test is written, run, and failure is documented.
   - _Requirements: 1.5, 1.6_
 
-- [ ] 10. Write preservation property tests (BEFORE implementing fix)
+- [x] 10. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** — Products With No Groups and Active-Toggle Independence
   - **IMPORTANT**: Follow observation-first methodology on unfixed code.
   - Observe on unfixed code:
@@ -313,9 +313,9 @@
   - Verify all tests PASS on unfixed code.
   - _Requirements: 3.8, 3.9, 3.10_
 
-- [ ] 11. Fix Bug 3 — Add deepCopyProduct() Room transaction to ProductRepository
+- [x] 11. Fix Bug 3 — Add deepCopyProduct() Room transaction to ProductRepository
 
-  - [ ] 11.1 Add one-shot DAO queries (if not already added in task 7.1)
+  - [x] 11.1 Add one-shot DAO queries (if not already added in task 7.1)
     - **File**: `app/src/main/java/com/example/puntodeventa/data/local/CustomizationGroupDao.kt`
       - Add: `@Query("SELECT * FROM customization_groups WHERE productId = :productId")`
         `suspend fun getGroupsByProductOnce(productId: String): List<CustomizationGroupEntity>`
@@ -325,7 +325,7 @@
     - If these were already added for Bug 2, verify they are present and skip duplication.
     - _Requirements: 2.7_
 
-  - [ ] 11.2 Add `deepCopyProduct(product: Product)` to `ProductRepository`
+  - [x] 11.2 Add `deepCopyProduct(product: Product)` to `ProductRepository`
     - **File**: `app/src/main/java/com/example/puntodeventa/data/repository/ProductRepository.kt`
     - Add a `private val database: AppDatabase` constructor parameter (see task 11.3).
     - Add the function:
@@ -358,7 +358,7 @@
       back on any failure leaving no partial rows (Req 2.8, 2.9, 3.8–3.10)_
     - _Requirements: 2.7, 2.8, 2.9_
 
-  - [ ] 11.3 Add `database: AppDatabase` parameter to `ProductRepository` constructor
+  - [x] 11.3 Add `database: AppDatabase` parameter to `ProductRepository` constructor
     - **File**: `app/src/main/java/com/example/puntodeventa/data/repository/ProductRepository.kt`
     - Change class declaration to:
       ```kotlin
@@ -371,7 +371,7 @@
       ```
     - _Requirements: 2.7, 2.8_
 
-  - [ ] 11.4 Update `ConfigurationViewModel.duplicateProduct()` to call `deepCopyProduct()`
+  - [x] 11.4 Update `ConfigurationViewModel.duplicateProduct()` to call `deepCopyProduct()`
     - **File**: `app/src/main/java/com/example/puntodeventa/ui/configuration/ConfigurationViewModel.kt`
     - Replace the existing `productRepository.insert(product.copy(id = UUID.randomUUID().toString()))`
       with `productRepository.deepCopyProduct(product)`.
@@ -379,7 +379,7 @@
     - Remove `import java.util.UUID` from `ConfigurationViewModel` if it is no longer used there.
     - _Requirements: 2.7_
 
-  - [ ] 11.5 Update `MainActivity` to pass `database` to `ProductRepository` constructor
+  - [x] 11.5 Update `MainActivity` to pass `database` to `ProductRepository` constructor
     - **File**: `app/src/main/java/com/example/puntodeventa/MainActivity.kt`
     - Change the `ProductRepository` construction to:
       ```kotlin
@@ -393,20 +393,20 @@
     - No other changes to `MainActivity` are required.
     - _Requirements: 2.7_
 
-  - [ ] 11.6 Verify bug condition exploration test now passes
+  - [x] 11.6 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** — Duplicate Has Same Number of Groups With New IDs
     - **IMPORTANT**: Re-run the SAME test written in task 9 — do NOT write a new test.
     - Also assert: `duplicate.id ≠ original.id`, all group IDs differ, all option IDs differ.
     - **EXPECTED OUTCOME**: Test PASSES (confirms deep copy is complete and IDs are independent).
     - _Requirements: 2.7, 2.8, 2.9_
 
-  - [ ] 11.7 Verify preservation tests still pass
+  - [x] 11.7 Verify preservation tests still pass
     - **Property 2: Preservation** — No-Group Products, Active Toggle, Delete Independence
     - **IMPORTANT**: Re-run the SAME tests written in task 10 — do NOT write new tests.
     - **EXPECTED OUTCOME**: All tests PASS (no regressions in zero-group duplication,
       active toggle, or cascade delete isolation).
 
-- [ ] 12. Checkpoint Bug 3 — all tests pass
+- [x] 12. Checkpoint Bug 3 — all tests pass
   - Run all Bug 3 tests.
   - Ensure tasks 9–11 are all checked off and all assertions green.
   - Commit with message: `fix(duplicate): deep copy groups and options in a Room transaction`
@@ -415,7 +415,7 @@
 
 ## Bug 4 — Missing Top Padding on LazyColumn
 
-- [ ] 13. Write bug condition exploration test
+- [x] 13. Write bug condition exploration test
   - **Property 1: Bug Condition** — LazyColumn Has No Top Padding
   - **CRITICAL**: Write this test BEFORE applying the fix. It must FAIL on unfixed code.
   - **GOAL**: Confirm that the first `ProductCard` top edge is flush against the bottom of
@@ -428,7 +428,7 @@
   - Mark complete when test is written, run, and failure is documented.
   - _Requirements: 1.7, 1.8_
 
-- [ ] 14. Write preservation property tests (BEFORE implementing fix)
+- [x] 14. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** — Empty State and Scroll Behavior Unchanged
   - **IMPORTANT**: Follow observation-first methodology on unfixed code.
   - Observe on unfixed code:
@@ -440,9 +440,9 @@
   - Verify all tests PASS on unfixed code.
   - _Requirements: 3.11, 3.12_
 
-- [ ] 15. Fix Bug 4 — Apply contentPadding to LazyColumn and top padding to Box
+- [x] 15. Fix Bug 4 — Apply contentPadding to LazyColumn and top padding to Box
 
-  - [ ] 15.1 Add `contentPadding` to the `LazyColumn` in `ConfigurationScreen`
+  - [-] 15.1 Add `contentPadding` to the `LazyColumn` in `ConfigurationScreen`
     - **File**: `app/src/main/java/com/example/puntodeventa/ui/configuration/ConfigurationScreen.kt`
     - Locate the `LazyColumn` inside the `else` branch of the state-machine `when` block.
     - Add `contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)` as a named argument.
