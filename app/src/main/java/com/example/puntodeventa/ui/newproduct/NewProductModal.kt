@@ -175,7 +175,7 @@ private fun NewProductFormContent(
             verticalAlignment     = Alignment.CenterVertically
         ) {
             Text(
-                text       = "Nuevo Producto",
+                text       = if (uiState.isEditMode) "Editar Producto" else "Nuevo Producto",
                 fontWeight = FontWeight.Bold,
                 fontSize   = 20.sp,
                 color      = InputText
@@ -347,7 +347,7 @@ private fun NewProductFormContent(
                         color       = Color.White
                     )
                 } else {
-                    Text("Crear producto")
+                    Text(if (uiState.isEditMode) "Guardar" else "Crear producto")
                 }
             }
         }
