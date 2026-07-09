@@ -44,7 +44,8 @@ class MainActivity : ComponentActivity() {
         val productRepo = ProductRepository(
             productDao = db.productDao(),
             groupDao   = db.customizationGroupDao(),
-            optionDao  = db.customizationOptionDao()
+            optionDao  = db.customizationOptionDao(),
+            database   = db
         )
 
         setContent {

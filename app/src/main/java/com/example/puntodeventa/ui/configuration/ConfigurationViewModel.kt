@@ -161,15 +161,15 @@ class ConfigurationViewModel(
     }
 
     /**
-     * Duplicates the product with a new UUID id (AC-08.5).
+     * Duplicates the product with a deep copy of all its customization data (AC-08.5).
+     * All three entity levels (product, groups, options) are copied inside a single Room
+     * transaction with fresh UUIDs at every level.
      * Dismisses the menu on success; on exception sets error and also dismisses (AC-08.6).
      */
     fun duplicateProduct(product: Product) {
         viewModelScope.launch {
             try {
-                productRepository.insert(
-                    product.copy(id = java.util.UUID.randomUUID().toString())
-                )
+                productRepository.deepCopyProduct(product)
                 _expandedMenuId.value = null
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error desconocido"
