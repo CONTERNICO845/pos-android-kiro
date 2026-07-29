@@ -2,7 +2,9 @@
 
 ## Overview
 
-El Dynamic Theme Engine es un módulo que permite al usuario personalizar la apariencia visual de la aplicación POS seleccionando entre 4 temas predefinidos. La arquitectura sigue el patrón MVVM + UDF existente en el proyecto, añadiendo una capa de persistencia basada en Preferences DataStore y un flujo reactivo que propaga los cambios de tema a toda la UI sin reiniciar la app.
+El Dynamic Theme Engine es un módulo que permite al usuario personalizar la apariencia visual de la aplicación POS seleccionando entre **9 temas predefinidos** (4 originales + 5 añadidos en la expansión de temas). La arquitectura sigue el patrón MVVM + UDF existente en el proyecto, añadiendo una capa de persistencia basada en Preferences DataStore y un flujo reactivo que propaga los cambios de tema a toda la UI sin reiniciar la app.
+
+> **Expansión de temas:** el catálogo se amplió de 4 a 9 temas para dar más opciones de personalización premium. Los 5 nuevos temas (`MIDNIGHT_SLATE`, `CHARCOAL_AMBER`, `ROSE_QUARTZ`, `EMERALD_TEAL`, `ROYAL_PLUM`) están especificados con sus hex completos en la sección [Data Models](#data-models). La selección combinada cubre modos claro y oscuro (6 claros + 3 oscuros), y cada par de color texto/fondo cumple contraste WCAG 2.1 ≥ 4.5:1.
 
 El diseño prioriza:
 - **Compatibilidad hacia atrás**: El tema DEFAULT_GREEN reproduce exactamente los colores actuales de `AppColorScheme`.
@@ -62,7 +64,13 @@ enum class AppTheme {
     DEFAULT_GREEN,
     DARK_NEON,
     OCEAN_BLUE,
-    SUNSET_ORANGE;
+    SUNSET_ORANGE,
+    // Expansión de temas
+    MIDNIGHT_SLATE,
+    CHARCOAL_AMBER,
+    ROSE_QUARTZ,
+    EMERALD_TEAL,
+    ROYAL_PLUM;
 
     companion object {
         val DEFAULT = DEFAULT_GREEN
@@ -185,6 +193,25 @@ fun ThemeCard(
 | `DARK_NEON` | "Neón Oscuro" | true | #39FF14 | #121212 | #00FFFF |
 | `OCEAN_BLUE` | "Océano Azul" | false | #1565C0 | #FFFFFF | #42A5F5 |
 | `SUNSET_ORANGE` | "Atardecer Naranja" | false | #E65100 | #FFFBF5 | #FFC107 |
+| `MIDNIGHT_SLATE` | "Pizarra Medianoche" | true | #8AB4FF | #0E1116 | #7FE0D4 |
+| `CHARCOAL_AMBER` | "Carbón Ámbar" | true | #FFCA6B | #14120E | #C7D98F |
+| `ROSE_QUARTZ` | "Cuarzo Rosa" | false | #B0235A | #FFF8F9 | #8A5A2B |
+| `EMERALD_TEAL` | "Esmeralda" | false | #00695C | #F5FBF9 | #4A6572 |
+| `ROYAL_PLUM` | "Ciruela Real" | false | #6A1B9A | #FDF8FF | #9C4368 |
+
+#### Notas de diseño de los 5 temas nuevos (expansión)
+
+Los cinco temas se diseñaron para un POS con estética moderna, premium y profesional. Cada `ColorScheme` es autoconsistente (no depende de un toggle de modo del sistema): dos son oscuros y tres son claros, de modo que el catálogo completo ofrece al usuario tanto modo claro como oscuro.
+
+| Tema | Modo | Concepto de diseño |
+|---|---|---|
+| `MIDNIGHT_SLATE` | Oscuro | Lienzo pizarra azulada con primary índigo suave y acento teal. Sobrio y tecnológico. |
+| `CHARCOAL_AMBER` | Oscuro | Carbón cálido con primary ámbar de lujo y acento salvia. Acogedor para uso nocturno. |
+| `ROSE_QUARTZ` | Claro | Blush suave con primary rosa boutique y acento bronce. Elegante y cálido. |
+| `EMERALD_TEAL` | Claro | Menta fría con primary esmeralda profundo y acento azul pizarra. Limpio y profesional. |
+| `ROYAL_PLUM` | Claro | Lila aireado con primary ciruela regia y acento rosa. Rico y distintivo. |
+
+Todos los pares texto/fondo (`onPrimary/primary`, `onSecondary/secondary`, `onPrimaryContainer/primaryContainer`, `onSecondaryContainer/secondaryContainer`, `onTertiary/tertiary`, `onTertiaryContainer/tertiaryContainer`, `onBackground/background`, `onSurface/surface`, `onSurfaceVariant/surfaceVariant`, `onError/error`) fueron verificados con ratio de contraste WCAG 2.1 ≥ 4.5:1.
 
 ### DataStore Schema
 
@@ -232,6 +259,81 @@ secondary = #FFC107, onSecondary = #3E2723
 background = #FFFBF5, onBackground = #1A1A1A
 surface = #FFFFFF, onSurface = #1A1A1A
 error = #B71C1C, onError = #FFFFFF
+```
+
+#### MIDNIGHT_SLATE (darkColorScheme) — expansión
+```
+primary = #8AB4FF, onPrimary = #06264D
+primaryContainer = #26385C, onPrimaryContainer = #D6E3FF
+secondary = #7FE0D4, onSecondary = #00352E
+secondaryContainer = #14453F, onSecondaryContainer = #A6F0E6
+tertiary = #FFB59D, onTertiary = #5A1B0A
+tertiaryContainer = #5A2A1C, onTertiaryContainer = #FFDBCF
+background = #0E1116, onBackground = #E4E7EC
+surface = #171B22, onSurface = #E4E7EC
+surfaceVariant = #2A2F38, onSurfaceVariant = #C3C8D1
+outline = #3A4049
+error = #FF6B6B, onError = #3D0000
+```
+
+#### CHARCOAL_AMBER (darkColorScheme) — expansión
+```
+primary = #FFCA6B, onPrimary = #3A2A00
+primaryContainer = #5C4300, onPrimaryContainer = #FFE4A8
+secondary = #F2C1A0, onSecondary = #422A12
+secondaryContainer = #5A3D28, onSecondaryContainer = #FFDCC4
+tertiary = #C7D98F, onTertiary = #2C3400
+tertiaryContainer = #404A16, onTertiaryContainer = #E3F3A9
+background = #14120E, onBackground = #EDE6DC
+surface = #1E1B16, onSurface = #EDE6DC
+surfaceVariant = #342F27, onSurfaceVariant = #D2C8B8
+outline = #4E483D
+error = #FF6B6B, onError = #3D0000
+```
+
+#### ROSE_QUARTZ (lightColorScheme) — expansión
+```
+primary = #B0235A, onPrimary = #FFFFFF
+primaryContainer = #FFD9E2, onPrimaryContainer = #3E0019
+secondary = #8C4A5E, onSecondary = #FFFFFF
+secondaryContainer = #FFD9E2, onSecondaryContainer = #3A0A1B
+tertiary = #8A5A2B, onTertiary = #FFFFFF
+tertiaryContainer = #FFDDB8, onTertiaryContainer = #2E1500
+background = #FFF8F9, onBackground = #201A1B
+surface = #FFFFFF, onSurface = #201A1B
+surfaceVariant = #F3E0E4, onSurfaceVariant = #524345
+outline = #D8C2C6
+error = #B71C1C, onError = #FFFFFF
+```
+
+#### EMERALD_TEAL (lightColorScheme) — expansión
+```
+primary = #00695C, onPrimary = #FFFFFF
+primaryContainer = #B2DFDB, onPrimaryContainer = #00201C
+secondary = #00796B, onSecondary = #FFFFFF
+secondaryContainer = #A7F0E4, onSecondaryContainer = #00201B
+tertiary = #4A6572, onTertiary = #FFFFFF
+tertiaryContainer = #CDE7F0, onTertiaryContainer = #051F27
+background = #F5FBF9, onBackground = #191C1B
+surface = #FFFFFF, onSurface = #191C1B
+surfaceVariant = #DBE5E1, onSurfaceVariant = #3F4946
+outline = #6F7976
+error = #BA1A1A, onError = #FFFFFF
+```
+
+#### ROYAL_PLUM (lightColorScheme) — expansión
+```
+primary = #6A1B9A, onPrimary = #FFFFFF
+primaryContainer = #EEDCF7, onPrimaryContainer = #2C0A45
+secondary = #7B4B9E, onSecondary = #FFFFFF
+secondaryContainer = #EEDCF7, onSecondaryContainer = #2A0F3D
+tertiary = #9C4368, onTertiary = #FFFFFF
+tertiaryContainer = #FFD9E4, onTertiaryContainer = #3E0022
+background = #FDF8FF, onBackground = #1D1A20
+surface = #FFFFFF, onSurface = #1D1A20
+surfaceVariant = #E9E0EC, onSurfaceVariant = #4A454E
+outline = #7C7580
+error = #BA1A1A, onError = #FFFFFF
 ```
 
 
@@ -326,7 +428,7 @@ El testing combina dos estrategias complementarias:
 
 | Test | Validates |
 |---|---|
-| `AppTheme enum has exactly 4 entries` | Req 1.1 |
+| `AppTheme enum has exactly 9 entries` | Req 1.1 |
 | `Empty DataStore emits DEFAULT_GREEN` | Req 1.2, 2.3 |
 | `DEFAULT_GREEN ColorScheme matches legacy AppColorScheme` | Req 4.1, 4.2 |
 | `DARK_NEON uses darkColorScheme and correct hex values` | Req 5.1, 5.2, 5.4 |

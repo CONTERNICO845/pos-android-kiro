@@ -2,12 +2,12 @@
 
 ## Introduction
 
-Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este sistema permite al usuario personalizar la apariencia visual completa de la aplicación seleccionando entre 4 temas predefinidos. La preferencia se persiste localmente y se aplica de forma reactiva a toda la interfaz sin necesidad de reiniciar la app.
+Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este sistema permite al usuario personalizar la apariencia visual completa de la aplicación seleccionando entre 9 temas predefinidos (4 originales + 5 de la expansión de temas). La preferencia se persiste localmente y se aplica de forma reactiva a toda la interfaz sin necesidad de reiniciar la app.
 
 ## Glossary
 
 - **Theme_Engine**: Módulo responsable de gestionar la selección, persistencia y aplicación del tema visual activo en toda la aplicación.
-- **AppTheme**: Enumeración Kotlin que define los 4 temas disponibles: DEFAULT_GREEN, DARK_NEON, OCEAN_BLUE, SUNSET_ORANGE.
+- **AppTheme**: Enumeración Kotlin que define los 9 temas disponibles: DEFAULT_GREEN, DARK_NEON, OCEAN_BLUE, SUNSET_ORANGE, MIDNIGHT_SLATE, CHARCOAL_AMBER, ROSE_QUARTZ, EMERALD_TEAL, ROYAL_PLUM.
 - **Theme_Preferences_Repository**: Componente de persistencia que guarda y recupera la preferencia de tema seleccionado usando Preferences DataStore.
 - **Theme_Selector_Screen**: Pantalla accesible desde la sección de Configuración que muestra las opciones de tema disponibles en formato de cuadrícula.
 - **ColorScheme**: Objeto Material3 `ColorScheme` que define la paleta de colores completa para un tema dado.
@@ -22,7 +22,7 @@ Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este s
 
 #### Acceptance Criteria
 
-1. THE Theme_Engine SHALL define an AppTheme enum with exactly four values: DEFAULT_GREEN, DARK_NEON, OCEAN_BLUE, and SUNSET_ORANGE.
+1. THE Theme_Engine SHALL define an AppTheme enum with exactly nine values: DEFAULT_GREEN, DARK_NEON, OCEAN_BLUE, SUNSET_ORANGE, MIDNIGHT_SLATE, CHARCOAL_AMBER, ROSE_QUARTZ, EMERALD_TEAL, and ROYAL_PLUM.
 2. IF no theme preference entry exists in the persisted settings at app startup, THEN THE Theme_Engine SHALL use DEFAULT_GREEN as the active theme.
 3. THE AppTheme enum SHALL be exhaustive such that adding or removing a value produces a compile-time error in all `when` expressions that consume it.
 
@@ -97,7 +97,7 @@ Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este s
 
 #### Acceptance Criteria
 
-1. THE Theme_Selector_Screen SHALL display a LazyVerticalGrid with GridCells.Fixed(2) containing exactly 4 theme cards, one for each AppTheme value.
+1. THE Theme_Selector_Screen SHALL display a scrollable LazyVerticalGrid with GridCells.Adaptive(minSize = 160.dp) containing one theme card for each AppTheme value (9 total), scaling the column count to the available screen width.
 2. THE Theme_Selector_Screen SHALL display the title "Apariencia" as the first element above the grid.
 3. WHEN the user taps a navigation element labeled "Apariencia" within the Settings area, THE application SHALL navigate to the Theme_Selector_Screen.
 4. THE Theme_Selector_Screen SHALL display each theme card with the theme name and a representative color preview, allowing the user to visually distinguish between available themes.
@@ -109,7 +109,7 @@ Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este s
 
 #### Acceptance Criteria
 
-1. THE Theme_Selector_Screen SHALL display each theme card with the theme display name in Spanish (Verde por Defecto, Neón Oscuro, Océano Azul, Atardecer Naranja) as visible text within the card.
+1. THE Theme_Selector_Screen SHALL display each theme card with the theme display name in Spanish (Verde por Defecto, Neón Oscuro, Océano Azul, Atardecer Naranja, Pizarra Medianoche, Carbón Ámbar, Cuarzo Rosa, Esmeralda, Ciruela Real) as visible text within the card.
 2. THE Theme_Selector_Screen SHALL display exactly 3 color swatches within each theme card, representing the primary, background, and accent colors from the respective ColorScheme, rendered as filled circles or rounded rectangles arranged in a horizontal row.
 3. IF a theme card represents the currently active theme, THEN THE Theme_Selector_Screen SHALL display a visible border with a distinct color differentiating it from non-selected cards, and a check icon overlay on that card to indicate selection state.
 4. IF a theme card does not represent the currently active theme, THEN THE Theme_Selector_Screen SHALL display the card without a highlighted border and without a check icon.
@@ -134,3 +134,19 @@ Dynamic Theme Engine para la aplicación POS Android (Compose/Material3). Este s
 2. THE app-level build configuration SHALL include the `androidx.datastore-preferences` library as an `implementation` dependency using the version catalog alias.
 3. WHEN the dependency is added, THE project SHALL compile successfully without unresolved import errors for `androidx.datastore.preferences` packages.
 4. THE Theme_Preferences_Repository SHALL use Preferences DataStore (not SharedPreferences) as the persistence mechanism for theme preference.
+
+### Requirement 12: Expanded Theme Catalog (Theme Expansion)
+
+**User Story:** As a user, I want additional premium, professional color themes, so that I can better personalize the POS to my brand and environment.
+
+#### Acceptance Criteria
+
+1. THE Theme_Engine SHALL define five additional themes beyond the original four, each mapped to a complete Material3 ColorScheme via the exhaustive `AppTheme.toColorScheme()` `when`:
+   - MIDNIGHT_SLATE (darkColorScheme): primary #8AB4FF, background #0E1116, surface #171B22, secondary #7FE0D4.
+   - CHARCOAL_AMBER (darkColorScheme): primary #FFCA6B, background #14120E, surface #1E1B16, secondary #F2C1A0.
+   - ROSE_QUARTZ (lightColorScheme): primary #B0235A, background #FFF8F9, surface #FFFFFF, secondary #8C4A5E.
+   - EMERALD_TEAL (lightColorScheme): primary #00695C, background #F5FBF9, surface #FFFFFF, secondary #00796B.
+   - ROYAL_PLUM (lightColorScheme): primary #6A1B9A, background #FDF8FF, surface #FFFFFF, secondary #7B4B9E.
+2. THE expanded catalog SHALL cover both light and dark modes: the nine themes comprise six light schemes and three dark schemes, so the user can pick an appropriate theme for both bright and low-light environments.
+3. FOR every theme in the expanded catalog, each on-color/base-color pairing (onPrimary/primary, onSecondary/secondary, onPrimaryContainer/primaryContainer, onSecondaryContainer/secondaryContainer, onTertiary/tertiary, onTertiaryContainer/tertiaryContainer, onBackground/background, onSurface/surface, onSurfaceVariant/surfaceVariant, onError/error) SHALL have a WCAG 2.1 contrast ratio of at least 4.5:1.
+4. THE full hex specification for every color role of each new theme SHALL be documented in design.md under "ColorScheme Mapping".

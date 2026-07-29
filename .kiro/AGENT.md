@@ -171,11 +171,16 @@ Ojo: `NavDestination.Settings` renderiza `ConfigurationScreen`, no `SettingsScre
 
 Motor de temas dinámico y persistido, **completamente integrado** en toda la UI:
 
-- `ui/theme/AppTheme.kt` — `enum AppTheme { DEFAULT_GREEN, DARK_NEON, OCEAN_BLUE, SUNSET_ORANGE }`.
-- `ui/theme/ThemeColors.kt` — `AppTheme.toColorScheme()` con `when` exhaustivo. Incluye todos los roles
-  de Material3: primary, secondary, tertiary, surface, surfaceVariant, outline, error, y sus variantes
-  on*/container.
+- `ui/theme/AppTheme.kt` — `enum AppTheme` con **9 temas**: los 4 originales `DEFAULT_GREEN`,
+  `DARK_NEON`, `OCEAN_BLUE`, `SUNSET_ORANGE` + 5 de la expansión `MIDNIGHT_SLATE`, `CHARCOAL_AMBER`,
+  `ROSE_QUARTZ`, `EMERALD_TEAL`, `ROYAL_PLUM`. Incluye `displayName` (ES) y `previewColors`.
+- `ui/theme/ThemeColors.kt` — `AppTheme.toColorScheme()` con `when` exhaustivo (9 ramas). Incluye todos
+  los roles de Material3: primary, secondary, tertiary, surface, surfaceVariant, outline, error, y sus
+  variantes on*/container. **6 esquemas claros + 3 oscuros**; todos los pares texto/fondo verificados
+  con contraste WCAG 2.1 ≥ 4.5:1. Hex completos documentados en `.kiro/specs/18_theme_engine/design.md`.
 - `ui/theme/Theme.kt` — `PuntoDeVentaTheme(appTheme, content)`.
+- `ui/theme/ThemeSelectorScreen.kt` — cuadrícula **adaptable** (`GridCells.Adaptive(minSize = 160.dp)`,
+  scrollable) que escala el número de columnas al ancho de pantalla a medida que crece el catálogo.
 - Persistencia en **DataStore** (`themeDataStore`, clave `selected_theme`) vía `ThemePreferencesRepository`.
 - **Todos los componentes** usan `MaterialTheme.colorScheme` — el cambio de tema se refleja en tiempo
   real sin reiniciar la app. `Color.kt` permanece como documentación/referencia histórica.
@@ -213,7 +218,7 @@ renumerar, mover ni borrar specs.**
 | 15 | `15_ticket_history` | **17/17 ✅** | Pantalla "Historial de Tickets" que sustituye el placeholder de la ruta `tickets`: query por rango de timestamps, `TimeFilter` (Hoy/Ayer/Este mes/Todo), tarjetas con estilo de recibo monoespaciado y reimpresión. |
 | 16 | `16_sprint_correcciones` | **37/37 ✅** | Sprint UX de tres frentes: `MenuFilterBar` + búsqueda en el POS, divisor de orden con tijeras (`isDivider`) e impresión de línea separadora con doble altura, y rediseño del checkout estilo "calculadora/asistente" en tema claro. |
 | 17 | `17_ux_polish_sprint` | **27/27 ✅** | Pulido UX: navegación directa Home → POS aplicando el `menuId` tocado, lógica anti-spam del botón de tijeras, limpieza del `CheckoutPanel` y estado visual "glow" en los botones de completar orden. |
-| 18 | `18_theme_engine` | **25/25 ✅** | Motor de temas dinámico: enum `AppTheme` de 4 temas, persistencia en Preferences DataStore con fallback a `DEFAULT_GREEN`, `ThemeViewModel` reactivo, `ThemeSelectorScreen` en cuadrícula y migración completa de todos los componentes a `MaterialTheme.colorScheme`. Sin reinicio de app. |
+| 18 | `18_theme_engine` | **25/25 ✅** | Motor de temas dinámico: enum `AppTheme` (**ampliado a 9 temas**: 4 originales + 5 premium `MIDNIGHT_SLATE`/`CHARCOAL_AMBER`/`ROSE_QUARTZ`/`EMERALD_TEAL`/`ROYAL_PLUM`), persistencia en Preferences DataStore con fallback a `DEFAULT_GREEN`, `ThemeViewModel` reactivo, `ThemeSelectorScreen` en cuadrícula adaptable y migración completa de todos los componentes a `MaterialTheme.colorScheme`. 6 claros + 3 oscuros, contraste WCAG ≥ 4.5:1. Sin reinicio de app. |
 | 19 | `19_json_management` | **10/10 ✅** | Gestión de catálogo vía JSON: exportar a archivo (SAF `CreateDocument`), importar desde archivo (SAF `OpenDocument` con validación y replace-all transaccional), y editor JSON in-app con `TextField` monospace. DTOs con `kotlinx.serialization`, `CatalogJsonRepository` para la lógica y diálogos de confirmación. |
 
 ### Specs con nombre (previas a la numeración)
@@ -302,7 +307,7 @@ renumerar, mover ni borrar specs.**
 
 ### 4.5 Colores y tema
 
-- **Toda la UI** usa `MaterialTheme.colorScheme` para que los 4 temas se propaguen dinámicamente.
+- **Toda la UI** usa `MaterialTheme.colorScheme` para que los 9 temas se propaguen dinámicamente.
 - No introduzcas literales `Color(0x...)` en Composables. Si necesitas un token de marca fijo,
   sácalo de `ThemeColors.kt` mediante un color role del ColorScheme.
 - Al añadir un tema, el `when` de `AppTheme.toColorScheme()` es exhaustivo: el compilador te obligará
