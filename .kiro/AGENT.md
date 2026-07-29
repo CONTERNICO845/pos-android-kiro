@@ -144,8 +144,9 @@ Ojo: `NavDestination.Settings` renderiza `ConfigurationScreen`, no `SettingsScre
   usa `ip_address` o `192.168.1.248` y crea la impresora estable `default-printer`. JSON corrupto en
   DataStore también recupera esa impresora inicial. Conserva las APIs síncronas y legacy de IP solo
   por compatibilidad; todas operan sobre la colección DataStore.
-- UI multiimpresora: `ModalBottomSheet` de guardadas, selección para editar, switches de activación y
-  alta nueva. El formulario cubre nombre, IPv4, puerto, papel 58/80, autocorte y protocolo; defaults
+- UI multiimpresora: `ModalBottomSheet` de guardadas, selección para editar, switches de activación,
+  eliminación individual y alta repetible de múltiples impresoras. El formulario cubre nombre, IPv4,
+  puerto, papel 58/80, autocorte y protocolo; defaults
   de alta: `Nueva impresora`, IP vacía, 9100, 80 mm, autocorte, ESC/POS y activa.
 - Discovery: `LanPrinterDiscovery` escanea la `/24` de una IPv4 privada activa, hosts 1..254 (excepto
   la IP local), en el puerto del borrador/default 9100, con 32 probes concurrentes y timeout 250 ms.

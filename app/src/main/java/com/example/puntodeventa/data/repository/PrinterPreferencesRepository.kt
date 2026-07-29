@@ -69,6 +69,16 @@ class PrinterPreferencesRepository(context: Context) {
         }
     }
 
+    /** Removes the printer identified by [printerId]. An empty collection is valid. */
+    fun deletePrinter(printerId: String) = synchronized(ACCESS_LOCK) {
+        runBlocking(Dispatchers.IO) {
+            val printers = readPrintersOrRecover()
+            if (printers.any { it.id == printerId }) {
+                writePrinters(printers.filterNot { it.id == printerId })
+            }
+        }
+    }
+
     /** Legacy compatibility API backed exclusively by the DataStore printer collection. */
     fun getIpAddress(): String = synchronized(ACCESS_LOCK) {
         runBlocking(Dispatchers.IO) {

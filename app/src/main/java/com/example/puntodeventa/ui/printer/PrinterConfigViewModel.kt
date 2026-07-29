@@ -146,6 +146,37 @@ class PrinterConfigViewModel(
             .onFailure { reportError("No se pudo actualizar la impresora: ${it.message.orEmpty()}") }
     }
 
+    fun deletePrinter(printerId: String) {
+        runCatching { prefsRepository.deletePrinter(printerId) }
+            .onSuccess {
+                val state = _uiState.value
+                val remaining = state.printers.filterNot { it.id == printerId }
+                val selected = if (state.selectedPrinterId != printerId) {
+                    remaining.firstOrNull { it.id == state.selectedPrinterId }
+                } else {
+                    remaining.firstOrNull()
+                }
+                val keepCurrentDraft = selected?.id == state.draft.id
+                val draft = when {
+                    keepCurrentDraft -> state.draft
+                    selected != null -> selected
+                    else -> newPrinterDraft(UUID.randomUUID().toString())
+                }
+                _uiState.value = state.copy(
+                    printers = remaining,
+                    draft = draft,
+                    selectedPrinterId = selected?.id,
+                    isAdding = selected == null,
+                    ipAddress = draft.ipAddress,
+                    portInput = draft.port.toString(),
+                    discoveredIps = emptyList(),
+                    statusMessage = "Impresora eliminada",
+                    errorMessage = null
+                )
+            }
+            .onFailure { reportError("No se pudo eliminar la impresora: ${it.message.orEmpty()}") }
+    }
+
     fun testPrinter() {
         val state = _uiState.value
         val port = state.portInput.toIntOrNull()

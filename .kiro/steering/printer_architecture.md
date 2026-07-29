@@ -10,7 +10,7 @@ Este documento describe el estado real del flujo multiimpresora LAN, desde la co
 
 ## 2. Pantalla de configuración multiimpresora
 
-El botón **Impresoras** abre un `ModalBottomSheet` con las impresoras guardadas, su `IP:puerto`, selección para editar, un `Switch` de activa/inactiva por destino y **Agregar Nueva Impresora**. El formulario edita nombre, IPv4, puerto, papel 58/80 mm, autocorte y protocolo/modelo; permite buscar, seleccionar una IP descubierta, probar y guardar.
+El botón **Impresoras** abre un `ModalBottomSheet` con las impresoras guardadas, su `IP:puerto`, selección para editar, un `Switch` de activa/inactiva y una acción **Eliminar** por destino, además de **Agregar Nueva Impresora**. Se pueden crear y eliminar múltiples impresoras; si se elimina la seleccionada se abre la siguiente disponible, y si la lista queda vacía se prepara un formulario nuevo. El formulario edita nombre, IPv4, puerto, papel 58/80 mm, autocorte y protocolo/modelo; permite buscar, seleccionar una IP descubierta, probar y guardar.
 
 Un alta nueva usa: nombre `Nueva impresora`, IP vacía, puerto `9100`, papel `80`, autocorte activo, protocolo `ESC/POS` y estado activo. El guardado exige nombre, IPv4 válida, puerto 1..65535, papel 58 u 80 y protocolo ESC/POS. La prueba usa todos los valores del borrador; guardar hace upsert por `id`.
 

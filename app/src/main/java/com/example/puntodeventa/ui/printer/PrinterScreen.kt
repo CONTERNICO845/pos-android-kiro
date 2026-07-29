@@ -88,6 +88,7 @@ fun PrinterScreen(
                 showPrinterSheet = false
             },
             onActiveChange = viewModel::togglePrinterActive,
+            onDelete = viewModel::deletePrinter,
             onAdd = {
                 viewModel.startAdd()
                 showPrinterSheet = false
@@ -125,6 +126,7 @@ private fun PrinterMenuSheet(
     selectedPrinterId: String?,
     onSelect: (String) -> Unit,
     onActiveChange: (String, Boolean) -> Unit,
+    onDelete: (String) -> Unit,
     onAdd: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -140,13 +142,21 @@ private fun PrinterMenuSheet(
                         headlineContent = { Text(printer.name) },
                         supportingContent = { Text("${printer.ipAddress}:${printer.port}") },
                         trailingContent = {
-                            Switch(
-                                checked = printer.isActive,
-                                onCheckedChange = { onActiveChange(printer.id, it) },
-                                modifier = Modifier.semantics {
-                                    contentDescription = "Activar ${printer.name}"
-                                }
-                            )
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Switch(
+                                    checked = printer.isActive,
+                                    onCheckedChange = { onActiveChange(printer.id, it) },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Activar ${printer.name}"
+                                    }
+                                )
+                                androidx.compose.material3.TextButton(
+                                    onClick = { onDelete(printer.id) },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Eliminar ${printer.name}"
+                                    }
+                                ) { Text("Eliminar") }
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
