@@ -1,6 +1,7 @@
 package com.example.puntodeventa.ui.printer
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,31 +10,183 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.MaterialTheme
 
-/**
- * Left-column control panel for the printer configuration screen.
- *
- * Displays:
- *  - Header: "IMPRESORA" title and "POS-8360 LAN" subtitle (Task 4.1)
- *  - IP address input field with character filtering and error state (Task 4.2)
- *  - Four static printer setting rows: Puerto, Papel, Corte, Modo (Task 4.5)
- *  - Test and Save action buttons (Task 4.6)
- *
- * Requirements: 3.1–3.6, 4.1–4.7, 5.1, 6.1–6.7, 12.4
- */
+/** Full stateless editor used by PrinterScreen. */
+@Composable
+fun ControlPanel(
+    state: PrinterConfigUiState,
+    onNameChange: (String) -> Unit,
+    onIpAddressChange: (String) -> Unit,
+    onPortChange: (String) -> Unit,
+    onPaperSizeChange: (Int) -> Unit,
+    onAutoCutChange: (Boolean) -> Unit,
+    onProtocolChange: (String) -> Unit,
+    onDiscoverClick: () -> Unit,
+    onDiscoveredIpClick: (String) -> Unit,
+    onTestClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onPrinterMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "IMPRESORA",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
+                Text(
+                    text = "POS-8360 LAN",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontSize = 16.sp
+                )
+            }
+            OutlinedButton(
+                onClick = onPrinterMenuClick,
+                modifier = Modifier.semantics { contentDescription = "Menú de impresoras" }
+            ) { Text("Impresoras") }
+        }
+
+        OutlinedTextField(
+            value = state.draft.name,
+            onValueChange = onNameChange,
+            label = { Text("Nombre") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = state.draft.ipAddress,
+            onValueChange = onIpAddressChange,
+            label = { Text("IP") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            isError = state.draft.ipAddress.isNotEmpty() && !isValidIpAddress(state.draft.ipAddress),
+            supportingText = if (state.draft.ipAddress.isNotEmpty() && !isValidIpAddress(state.draft.ipAddress)) {
+                { Text("Formato de IP inválido", color = MaterialTheme.colorScheme.error) }
+            } else null,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = state.portInput,
+            onValueChange = onPortChange,
+            label = { Text("Puerto") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Tamaño de papel", modifier = Modifier.weight(1f))
+            listOf(58, 80).forEach { size ->
+                FilterChip(
+                    selected = state.draft.paperSize == size,
+                    onClick = { onPaperSizeChange(size) },
+                    label = { Text("$size mm") },
+                    modifier = Modifier.semantics { contentDescription = "Papel $size milímetros" }
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Autocorte")
+            Switch(
+                checked = state.draft.autoCut,
+                onCheckedChange = onAutoCutChange,
+                modifier = Modifier.semantics { contentDescription = "Autocorte" }
+            )
+        }
+        OutlinedTextField(
+            value = state.draft.protocol,
+            onValueChange = onProtocolChange,
+            label = { Text("Protocolo/Modelo") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedButton(
+            onClick = onDiscoverClick,
+            enabled = !state.isDiscovering,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (state.isDiscovering) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(end = 8.dp).height(20.dp),
+                    strokeWidth = 2.dp
+                )
+                Text("Buscando impresoras…")
+            } else Text("Buscar Impresoras")
+        }
+        state.discoveredIps.forEach { ip ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onDiscoveredIpClick(ip) }
+                    .semantics { contentDescription = "Usar impresora $ip" },
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 2.dp
+            ) {
+                Text(ip, modifier = Modifier.padding(12.dp))
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(onClick = onTestClick, enabled = !state.isLoading, modifier = Modifier.weight(1f)) {
+                Text("Probar impresora")
+            }
+            Button(onClick = onSaveClick, modifier = Modifier.weight(1f)) {
+                Text("Guardar")
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+    }
+}
+
+/** Legacy overload retained so existing androidTest sources continue to compile. */
 @Composable
 fun ControlPanel(
     ipAddress: String,
@@ -42,9 +195,7 @@ fun ControlPanel(
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Determine error state: non-empty input that does not match a valid IP pattern
     val isIpError = ipAddress.isNotEmpty() && !isValidIpAddress(ipAddress)
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -52,119 +203,49 @@ fun ControlPanel(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // ── Task 4.1: Header ─────────────────────────────────────────────────
         Text(
-            text       = "IMPRESORA",
-            color      = MaterialTheme.colorScheme.onPrimaryContainer,
+            "IMPRESORA",
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontWeight = FontWeight.Bold,
-            fontSize   = 24.sp
+            fontSize = 24.sp
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text       = "POS-8360 LAN",
-            color      = MaterialTheme.colorScheme.onPrimaryContainer,
-            fontWeight = FontWeight.Normal,
-            fontSize   = 16.sp
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ── Task 4.2: IP Address Input Field ─────────────────────────────────
+        Spacer(Modifier.height(8.dp))
+        Text("POS-8360 LAN", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 16.sp)
+        Spacer(Modifier.height(24.dp))
         OutlinedTextField(
-            value         = ipAddress,
-            onValueChange = { newValue ->
-                // Filter: accept only digits (0-9) and periods (.)
-                val filtered = newValue.filter { it.isDigit() || it == '.' }
-                onIpAddressChange(filtered)
-            },
-            label  = { Text(text = "IP local", color = MaterialTheme.colorScheme.onPrimaryContainer) },
+            value = ipAddress,
+            onValueChange = { onIpAddressChange(it.filter { char -> char.isDigit() || char == '.' }) },
+            label = { Text("IP local") },
             isError = isIpError,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor   = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                errorContainerColor     = MaterialTheme.colorScheme.surface,
-                focusedBorderColor      = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor    = MaterialTheme.colorScheme.primary,
-                errorBorderColor        = Color.Red,
-                focusedTextColor        = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor      = MaterialTheme.colorScheme.onSurface,
-                errorTextColor          = MaterialTheme.colorScheme.onSurface,
-                focusedLabelColor       = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor     = MaterialTheme.colorScheme.onPrimaryContainer,
-                errorLabelColor         = Color.Red
-            ),
             modifier = Modifier.fillMaxWidth()
         )
         if (isIpError) {
             Text(
-                text      = "Formato de IP inválido",
-                color     = Color.Red,
-                fontSize  = 12.sp,
-                modifier  = Modifier
-                    .align(Alignment.Start)
-                    .padding(start = 4.dp, top = 2.dp)
+                "Formato de IP inválido",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.Start).padding(start = 4.dp, top = 2.dp)
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ── Task 4.5: Static Printer Settings Rows ───────────────────────────
-        StaticSettingRow(label = "Puerto", value = "9100")
-        Spacer(modifier = Modifier.height(4.dp))
-        StaticSettingRow(label = "Papel",  value = "80mm")
-        Spacer(modifier = Modifier.height(4.dp))
-        StaticSettingRow(label = "Corte",  value = "Automatico")
-        Spacer(modifier = Modifier.height(4.dp))
-        StaticSettingRow(label = "Modo",   value = "ESC/POS")
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // ── Task 4.6: Action Buttons ─────────────────────────────────────────
-        Row(
-            modifier            = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Test_Button
-            Button(
-                onClick  = onTestClick,
-                colors   = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor   = MaterialTheme.colorScheme.onSecondary
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text     = "Probar impresora",
-                    fontSize = 14.sp
-                )
-            }
-
-            // Save_Button
-            Button(
-                onClick  = onSaveClick,
-                colors   = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor   = MaterialTheme.colorScheme.onSecondary
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text     = "Guardar",
-                    fontSize = 14.sp
-                )
-            }
+        Spacer(Modifier.height(16.dp))
+        StaticSettingRow("Puerto", "9100")
+        Spacer(Modifier.height(4.dp))
+        StaticSettingRow("Papel", "80mm")
+        Spacer(Modifier.height(4.dp))
+        StaticSettingRow("Corte", "Automatico")
+        Spacer(Modifier.height(4.dp))
+        StaticSettingRow("Modo", "ESC/POS")
+        Spacer(Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onTestClick, modifier = Modifier.weight(1f)) { Text("Probar impresora") }
+            Button(onClick = onSaveClick, modifier = Modifier.weight(1f)) { Text("Guardar") }
         }
     }
 }
 
-/**
- * Returns true if [ip] matches a valid IPv4 pattern (e.g. "192.168.1.100").
- * Each octet must be 0–255.
- */
 private fun isValidIpAddress(ip: String): Boolean {
     val parts = ip.split(".")
-    if (parts.size != 4) return false
-    return parts.all { part ->
-        part.isNotEmpty() && part.all { it.isDigit() } && part.toIntOrNull()?.let { it in 0..255 } == true
+    return parts.size == 4 && parts.all { part ->
+        part.isNotEmpty() && part.all(Char::isDigit) && part.toIntOrNull()?.let { it in 0..255 } == true
     }
 }
