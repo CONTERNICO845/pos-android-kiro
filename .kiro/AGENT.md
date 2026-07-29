@@ -2,6 +2,7 @@
 
 > **Mapa de contexto maestro.** Este archivo describe el estado **real** del proyecto (no el planificado).
 > Última actualización: 2026-07-29 · Rama: `master` · Specs indexadas: 21 · Specs completas: 21/21
+> Estado local: soporte **multiimpresora LAN + discovery** implementado, todavía sin push y pendiente de validación física con impresoras reales.
 
 ---
 
@@ -17,13 +18,14 @@ Flujo funcional completo hoy:
    y notas, carrito editable con divisor de cuenta ("tijeras").
 3. **Checkout** — nombre de cliente, estado de pago, teclado de denominaciones, asistente de cambio y
    modal de confirmación.
-4. **Impresión** — genera ticket de cliente + ticket interno (cocina) y los envía por **ESC/POS sobre TCP**
-   a una impresora térmica POS-8360 en LAN (puerto 9100, charset Cp850).
+4. **Impresión** — genera ticket cliente + interno y los envía secuencialmente por **ESC/POS/TCP** a
+   todas las impresoras LAN activas, respetando puerto, papel 58/80 mm y autocorte por destino; los
+   reintentos omiten impresoras ya exitosas y la orden solo se guarda cuando todas terminan.
 5. **Persistencia** — la orden se guarda en Room con el texto exacto de ambos tickets.
 6. **Consulta** — pantallas de Estadísticas (ingresos, órdenes, ticket promedio, top productos) e
-   Historial de Tickets con reimpresión.
+   Historial de Tickets con reimpresión del ticket cliente a todas las impresoras activas.
 7. **Configuración** — CRUD de categorías/productos, **importar/exportar/modificar catálogo vía JSON**,
-   configuración de impresora y selector de tema.
+   gestión multiimpresora con activación individual y discovery LAN, y selector de tema.
 
 ### Stack tecnológico (verificado en `app/build.gradle.kts` y `gradle/libs.versions.toml`)
 
@@ -33,15 +35,15 @@ Flujo funcional completo hoy:
 | UI | Jetpack Compose (BOM `2026.02.01`) + Material 3 + `material-icons-extended` |
 | Build | Gradle KTS + **version catalog** (`libs.*`), AGP `9.2.1`, KSP `2.2.10-2.0.2` |
 | SDK | `minSdk 24` · `compileSdk 37` · `targetSdk 37` |
-| Persistencia | Room `2.7.1` (KSP) + DataStore Preferences `1.1.4` + SharedPreferences |
-| Serialización | kotlinx-serialization-json `1.8.1` (JSON de catálogo) |
+| Persistencia | Room `2.7.1` (KSP) + DataStore Preferences `1.1.4` (tema e impresoras) + SharedPreferences solo para migración legacy de impresoras |
+| Serialización | kotlinx-serialization-json `1.8.1` (catálogo y lista de impresoras) |
 | Lifecycle | lifecycle `2.11.0` (viewmodel-compose, runtime-compose), activity-compose `1.13.0` |
 | Arquitectura | MVVM + UDF, `StateFlow` / `collectAsStateWithLifecycle()` |
 | DI | **Manual** en `MainActivity` (sin Hilt ni Koin) |
 | Navegación | **Sin Navigation Compose**: `mutableStateOf<NavDestination>` + `when` |
 | Tests (JVM) | JUnit4 `4.13.2`, kotest `5.9.1` (property), MockK `1.13.14`, Turbine `1.2.0`, coroutines-test — `useJUnitPlatform()` |
 | Tests (device) | androidx-junit `1.3.0`, espresso `3.7.0`, `room-testing`, `compose-ui-test-junit4` |
-| Red | Solo `android.permission.INTERNET`. Sin Retrofit/OkHttp, sin Bluetooth, sin USB |
+| Red | Sockets TCP crudos; permisos `INTERNET`, `ACCESS_NETWORK_STATE` y `ACCESS_LOCAL_NETWORK` (runtime desde API 37). Sin Retrofit/OkHttp, Bluetooth ni USB |
 
 ---
 
@@ -57,10 +59,10 @@ app/src/main/java/com/example/puntodeventa/
 │   │                            #       SelectionType, 8 *Entity, 6 *Dao
 │   ├── json/                    # DTOs @Serializable para import/export de catálogo JSON
 │   ├── model/                   # Modelos de dominio/proyección: MenuItem, Category, Product,
-│   │                            #       ProductSaleSummary
-│   ├── printer/                 # EscPosPrinterLan.kt (object, único archivo)
+│   │                            #       ProductSaleSummary, PrinterConfig (8 campos)
+│   ├── printer/                 # EscPosPrinterLan + LanPrinterDiscovery
 │   └── repository/              # Menu, Category, Product, Order, CatalogJson,
-│                                #       PrinterPreferences (SharedPreferences),
+│                                #       PrinterPreferences (lista JSON en DataStore dedicado),
 │                                #       ThemePreferences (DataStore)
 └── ui/
     ├── navigation/              # NavDestination.kt (sealed), AppNavRail.kt
@@ -79,9 +81,8 @@ app/src/main/java/com/example/puntodeventa/
     ├── stats/                   # StatsScreen, StatsViewModel, StatsUiState, StatsFormatters, TimeFilter
     ├── tickets/                 # TicketsScreen(→TicketHistoryScreen), TicketHistoryViewModel,
     │                            #       TicketHistoryUiState, TicketCard, TicketHistoryTopBar
-    ├── printer/                 # PrinterScreen, PrinterConfigViewModel, PrinterConfigUiState,
-    │                            #       ControlPanel, StatusPanel, StatusInfoRow,
-    │                            #       StaticSettingRow, PrinterSpecs
+    ├── printer/                 # Pantalla/config multiimpresora: bottom sheet, formulario, switches,
+    │                            #       discovery, ControlPanel, StatusPanel, ViewModel/UiState
     └── settings/                # SettingsScreen.kt (placeholder huérfano, sin ruta)
 ```
 
@@ -134,17 +135,36 @@ Ojo: `NavDestination.Settings` renderiza `ConfigurationScreen`, no `SettingsScre
 
 ### 2.5 Impresión
 
-- `data/printer/EscPosPrinterLan.kt` → `object` sin interfaz. Socket TCP al puerto **9100**,
-  connect timeout 5 s, `withTimeout(15_000)`, `Dispatchers.IO`, charset **Cp850**.
-- API: `printTicket`, `printDoubleTicket`, `printInternalTicketWithDoubleHeight`, `testConnection`.
-- Comandos: `ESC @` (init `0x1B 0x40`), `GS V 0` (corte `0x1D 0x56 0x00`),
-  `ESC ! 0x10` / `ESC ! 0x00` (doble alto / normal).
-- **Formato:** `ui/pos/TicketFormatter.kt` — `object` de funciones puras, ancho fijo
-  `TICKET_WIDTH = 48`, columnas `CANT(5) + DESCRIPCION(30) + IMPORTE(13)`, IVA 16 % calculado
-  como `total / 1.16` con `HALF_UP`. Folio = `(orderCount + 1).padStart(3, '0')`.
-- **IP de impresora:** `PrinterPreferencesRepository` (SharedPreferences `printer_config` /
-  `ip_address`, default `192.168.1.248`).
-- Documento de referencia del flujo completo: **`printer_architecture.md`** (raíz del repo).
+- `data/model/PrinterConfig.kt`: configuración por destino con 8 campos (`id`, `name`, `ipAddress`,
+  `port`, `paperSize`, `autoCut`, `protocol`, `isActive`). Defaults: 9100, 80 mm, autocorte,
+  `ESC/POS`, activa.
+- `PrinterPreferencesRepository`: la fuente de verdad es una lista JSON en el Preferences DataStore
+  dedicado `printer_preferences` (clave `printers_json`). En el primer acceso sin datos migra desde
+  `SharedPreferences` legacy `printer_config`: prioriza `printers_json`; si falta o está corrupto,
+  usa `ip_address` o `192.168.1.248` y crea la impresora estable `default-printer`. JSON corrupto en
+  DataStore también recupera esa impresora inicial. Conserva las APIs síncronas y legacy de IP solo
+  por compatibilidad; todas operan sobre la colección DataStore.
+- UI multiimpresora: `ModalBottomSheet` de guardadas, selección para editar, switches de activación y
+  alta nueva. El formulario cubre nombre, IPv4, puerto, papel 58/80, autocorte y protocolo; defaults
+  de alta: `Nueva impresora`, IP vacía, 9100, 80 mm, autocorte, ESC/POS y activa.
+- Discovery: `LanPrinterDiscovery` escanea la `/24` de una IPv4 privada activa, hosts 1..254 (excepto
+  la IP local), en el puerto del borrador/default 9100, con 32 probes concurrentes y timeout 250 ms.
+  Solo detecta puertos TCP abiertos: **no garantiza ESC/POS ni que el host sea una impresora**.
+  `ACCESS_LOCAL_NETWORK` se solicita en runtime desde API 37; el manifest también declara
+  `INTERNET` y `ACCESS_NETWORK_STATE`.
+- Complete Order obtiene únicamente impresoras activas y bloquea si no hay ninguna. Imprime
+  secuencialmente a cada activa; `printOrder()` abre una conexión por impresora para sus dos tickets
+  (cliente + interno), usando `port`, `paperSize` (80 = 48 columnas; 58 = 32), `autoCut` y `protocol`.
+  Los IDs exitosos se conservan durante el checkout para que un reintento procese solo las fallidas.
+  Room se ejecuta únicamente después del éxito de todas.
+- Historial reimprime solo el ticket cliente a **todas** las impresoras activas, secuencialmente y con
+  la configuración de cada destino.
+- `EscPosPrinterLan` sigue siendo `object`: TCP crudo, connect/read timeout 5 s, timeout global 15 s,
+  `Dispatchers.IO` y **Cp850**. Solo admite protocolo ESC/POS; usa `ESC @`, corte `GS V 0` condicional
+  y doble altura para los items del ticket interno.
+- `TicketFormatter` permanece puro: base de 48 columnas, IVA 16 %, efectivo/cambio,
+  personalizaciones, notas y divisores. Folio = `(orderCount + 1).padStart(3, '0')`.
+- Documento detallado: **`.kiro/steering/printer_architecture.md`**.
 
 ### 2.6 Theming
 
@@ -201,8 +221,13 @@ renumerar, mover ni borrar specs.**
 |---|---|---|
 | `local-data-persistence` | **24/24 ✅** | Introduce Room para que los menús sobrevivan al cierre de la app: `MenuItemEntity`, `MenuItemDao`, `AppDatabase` v1, `MenuRepository` y `HomeViewModel` recableado con `ViewModelFactory`. Es la base histórica de toda la capa de datos. |
 | `pos-main-screen` | **38/38 ✅** | Pantalla POS de dos paneles (catálogo 70 % / carrito 30 %), tabs de categoría con pestaña TODO, `ProductModal` con cantidad, personalizaciones y notas, y esquema de órdenes (`OrderEntity`, `OrderItemEntity`, `OrderItemCustomizationEntity`) con `AppDatabase` v3 y cascadas. |
-| `printer-audit-and-ticket-format` | **28/28 ✅** | Dos entregables: auditoría documentada del flujo de impresión (produce **`printer_architecture.md`** en la raíz) y corrección del ticket de cliente para incluir efectivo/cambio y las `extraNotes` bajo cada producto. |
+| `printer-audit-and-ticket-format` | **28/28 ✅** | Dos entregables: auditoría documentada del flujo de impresión (hoy mantenida en **`.kiro/steering/printer_architecture.md`**) y corrección del ticket de cliente para incluir efectivo/cambio y las `extraNotes` bajo cada producto. |
 | `statistics-dashboard` | **29/29 ✅** | Dashboard "Estadísticas" sobre el historial de órdenes: `ProductSaleSummary` como proyección sin `@Entity`, queries agregadas por rango (`SUM`, `COUNT`, `COUNT DISTINCT customerName`, top 50 productos) y `Time_Filter` de cuatro opciones. |
+
+> **Estado fuera del índice de specs:** la evolución reciente a multiimpresora y discovery LAN está
+> implementada en el código local, pero no existe una carpeta/spec numerada nueva para ella. Por eso
+> se conservan sin cambios los conteos **21 specs indexadas / 21 completas**; no atribuir este trabajo
+> a las specs históricas 08 o 12 ni inventar una spec hasta que exista su carpeta.
 
 ### Lectura del estado
 
@@ -259,14 +284,20 @@ renumerar, mover ni borrar specs.**
 
 ### 4.4 Impresión y tickets
 
-- `TicketFormatter` debe permanecer **puro y testeable** (sin Android, sin I/O). Toda la lógica de
-  ancho, columnas, IVA y separadores va ahí, nunca en el ViewModel ni en el printer.
-- Ancho de ticket **48 caracteres** y columnas `CANT(5) / DESCRIPCION(30) / IMPORTE(13)`.
-  Si añades una línea, respeta el ancho o el ticket se descuadra en la impresora física.
-- Envío de bytes siempre por `EscPosPrinterLan`, con charset **Cp850** (los acentos se rompen con UTF-8).
-- Errores de impresión: hasta **3 intentos** (`printAttempts`); si fallan los tres, se muestra error y
-  **no se persiste la orden**.
-- Antes de tocar el flujo de impresión, lee `printer_architecture.md`.
+- `TicketFormatter` debe permanecer **puro y testeable** (sin Android, sin I/O). Su formato base es
+  de **48 columnas** para 80 mm; la adaptación a **32 columnas** para 58 mm pertenece al printer.
+- La fuente de verdad es `PrinterPreferencesRepository.getPrinters()` (lista JSON). Los flujos de
+  orden y reimpresión operan solo sobre `isActive`; nunca vuelvas a asumir una IP única.
+- Complete Order imprime secuencialmente y abre **una conexión por impresora para los dos tickets**.
+  Respeta `port`, `paperSize`, `autoCut` y `protocol`, registra IDs exitosos y en reintentos procesa
+  solo destinos fallidos. Si no hay activas o alguna sigue fallando, **no se persiste la orden**.
+- Historial reimprime el ticket cliente a todas las activas; no imprime el interno.
+- Envío de bytes siempre por `EscPosPrinterLan`, con **Cp850**, connect/read timeout de 5 s y timeout
+  global de 15 s. El discovery usa el puerto del borrador y solo prueba apertura TCP: no lo presentes
+  como identificación segura de impresoras ESC/POS.
+- Errores de Complete Order: hasta **3 intentos** (`printAttempts`); el carrito se conserva.
+- Antes de tocar el flujo, lee `.kiro/steering/printer_architecture.md`. La validación física de la
+  implementación multiimpresora/discovery continúa pendiente.
 
 ### 4.5 Colores y tema
 
@@ -311,7 +342,7 @@ Contexto para no "arreglar" cosas que son decisiones conscientes, y para saber d
 | 1 | DI manual | Repos y DB se instancian por Activity. `PosScreen` recibe **DAOs de Room directamente** y `NewProductViewModel.Factory` recibe el `AppDatabase` completo: la UI está acoplada a la persistencia. |
 | 2 | `runBlocking` en `getInstance` | El seeder se ejecuta con `runBlocking(Dispatchers.IO)` desde `MainActivity.onCreate`, es decir bloqueando el main thread. |
 | 3 | Migraciones inexistentes | `fallbackToDestructiveMigration(dropAllTables = true)` en v4 y `exportSchema = false`: cada bump de versión borra los datos y no hay validación de esquema. |
-| 4 | Dos sistemas de preferencias | Impresora en **SharedPreferences** (API síncrona) vs tema en **DataStore + Flow**. Inconsistente. |
+| 4 | Dos DataStores/formato distinto | Impresora y tema usan **Preferences DataStore** dedicados, pero impresora conserva API síncrona y serializa una lista JSON, mientras tema expone `Flow` y guarda un enum simple. `SharedPreferences printer_config` queda solo como origen de migración legacy. |
 | 5 | ~~Theming a medias~~ | **Resuelto.** Todos los componentes (`ui/pos`, `ui/printer`, `ui/newproduct`, `ui/home`, `AppNavRail`) ahora usan `MaterialTheme.colorScheme` y reaccionan dinámicamente al cambio de tema sin reinicio de app. `Color.kt` permanece como referencia histórica pero ya no se importa desde producción. |
 | 6 | Navegación frágil | Sin Navigation Compose: el destino es `mutableStateOf` (no `rememberSaveable`), sin back stack; los `route` son decorativos. `NavDestination.Settings` renderiza `ConfigurationScreen`. |
 | 7 | Código muerto | `data/local/SeedCallback.kt` y `ui/settings/SettingsScreen.kt` no se referencian desde ningún sitio. |
