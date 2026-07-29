@@ -8,5 +8,8 @@ data class TicketHistoryUiState(
     val selectedFilter: TimeFilter = TimeFilter.TODAY,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val reprintingOrderId: String? = null
+    val reprintingOrderId: String? = null,
+    val customStartMillis: Long? = null,
+    val customEndMillis: Long? = null,
+    val showDateRangePicker: Boolean = false
 )

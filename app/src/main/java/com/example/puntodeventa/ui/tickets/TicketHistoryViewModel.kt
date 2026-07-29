@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
 class TicketHistoryViewModel(
@@ -33,8 +36,41 @@ class TicketHistoryViewModel(
     }
 
     fun onFilterChange(filter: TimeFilter) {
-        _uiState.update { it.copy(selectedFilter = filter) }
-        loadOrders(filter)
+        if (filter == TimeFilter.CUSTOM) {
+            _uiState.update { it.copy(showDateRangePicker = true) }
+        } else {
+            _uiState.update {
+                it.copy(
+                    selectedFilter = filter,
+                    customStartMillis = null,
+                    customEndMillis = null
+                )
+            }
+            loadOrders(filter)
+        }
+    }
+
+    fun onDateRangeSelected(startMillis: Long, endMillis: Long) {
+        val zone = ZoneId.systemDefault()
+        val endDate = Instant.ofEpochMilli(endMillis).atZone(zone).toLocalDate()
+        val adjustedEnd = endDate.atTime(LocalTime.of(23, 59, 59, 999_000_000))
+            .atZone(zone)
+            .toInstant()
+            .toEpochMilli()
+
+        _uiState.update {
+            it.copy(
+                selectedFilter = TimeFilter.CUSTOM,
+                customStartMillis = startMillis,
+                customEndMillis = adjustedEnd,
+                showDateRangePicker = false
+            )
+        }
+        loadOrdersWithRange(startMillis, adjustedEnd)
+    }
+
+    fun onDateRangePickerDismissed() {
+        _uiState.update { it.copy(showDateRangePicker = false) }
     }
 
     fun onReprintTicket(order: OrderEntity) {
@@ -70,12 +106,22 @@ class TicketHistoryViewModel(
             try {
                 val (start, end) = StatsViewModel.computeRange(filter)
                 val orders = orderRepository.getOrdersByTimeRange(start, end)
-                _uiState.update {
-                    it.copy(
-                        orders = orders,
-                        isLoading = false
-                    )
-                }
+                _uiState.update { it.copy(orders = orders, isLoading = false) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            }
+        }
+    }
+
+    private fun loadOrdersWithRange(start: Long, end: Long) {
+        queryJob?.cancel()
+        queryJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                val orders = orderRepository.getOrdersByTimeRange(start, end)
+                _uiState.update { it.copy(orders = orders, isLoading = false) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

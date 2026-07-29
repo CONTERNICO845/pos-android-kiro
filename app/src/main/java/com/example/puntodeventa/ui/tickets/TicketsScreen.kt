@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,14 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puntodeventa.data.local.OrderEntity
+import com.example.puntodeventa.ui.stats.DateRangePickerDialog
 import com.example.puntodeventa.ui.stats.TimeFilter
-import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun TicketHistoryScreen(
     uiState: TicketHistoryUiState,
     onFilterChange: (TimeFilter) -> Unit,
     onReprintTicket: (OrderEntity) -> Unit,
+    onDateRangeSelected: (Long, Long) -> Unit,
+    onDateRangePickerDismissed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -83,5 +86,15 @@ fun TicketHistoryScreen(
                 }
             }
         }
+    }
+
+    // DateRangePicker dialog
+    if (uiState.showDateRangePicker) {
+        DateRangePickerDialog(
+            onConfirm = onDateRangeSelected,
+            onDismiss = onDateRangePickerDismissed,
+            initialStartMillis = uiState.customStartMillis,
+            initialEndMillis = uiState.customEndMillis
+        )
     }
 }

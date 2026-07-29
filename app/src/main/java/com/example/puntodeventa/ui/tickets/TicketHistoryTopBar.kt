@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puntodeventa.ui.stats.TimeFilter
-import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun TicketHistoryTopBar(
@@ -40,7 +40,7 @@ fun TicketHistoryTopBar(
             fontSize = 20.sp
         )
 
-        // Right side: pill-style filter selector
+        // Right side: pill-style filter selector (includes "📅 Rango" for custom)
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -49,8 +49,9 @@ fun TicketHistoryTopBar(
         ) {
             TimeFilter.entries.forEach { filter ->
                 val isSelected = filter == selectedFilter
+                val displayLabel = if (filter == TimeFilter.CUSTOM) "📅 Rango" else filter.label
                 Text(
-                    text = filter.label,
+                    text = displayLabel,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,

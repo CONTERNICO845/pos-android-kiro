@@ -169,7 +169,9 @@ class MainActivity : ComponentActivity() {
                             val statsUiState by statsViewModel.uiState.collectAsStateWithLifecycle()
                             StatsScreen(
                                 uiState = statsUiState,
-                                onFilterChange = statsViewModel::onFilterChange
+                                onFilterChange = statsViewModel::onFilterChange,
+                                onDateRangeSelected = statsViewModel::onDateRangeSelected,
+                                onDateRangePickerDismissed = statsViewModel::onDateRangePickerDismissed
                             )
                         }
                         NavDestination.Tickets  -> {
@@ -180,7 +182,9 @@ class MainActivity : ComponentActivity() {
                             TicketHistoryScreen(
                                 uiState = ticketHistoryUiState,
                                 onFilterChange = ticketHistoryViewModel::onFilterChange,
-                                onReprintTicket = ticketHistoryViewModel::onReprintTicket
+                                onReprintTicket = ticketHistoryViewModel::onReprintTicket,
+                                onDateRangeSelected = ticketHistoryViewModel::onDateRangeSelected,
+                                onDateRangePickerDismissed = ticketHistoryViewModel::onDateRangePickerDismissed
                             )
                         }
                         NavDestination.Printer  -> PrinterScreen(

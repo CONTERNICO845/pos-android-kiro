@@ -16,5 +16,8 @@ data class StatsUiState(
     val topProducts: List<ProductSaleSummary> = emptyList(),
     val recentOrders: List<OrderEntity> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val customStartMillis: Long? = null,
+    val customEndMillis: Long? = null,
+    val showDateRangePicker: Boolean = false
 )

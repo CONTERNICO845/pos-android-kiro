@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.heightIn
 fun StatsScreen(
     uiState: StatsUiState,
     onFilterChange: (TimeFilter) -> Unit,
+    onDateRangeSelected: (Long, Long) -> Unit,
+    onDateRangePickerDismissed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -73,6 +75,16 @@ fun StatsScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    // DateRangePicker dialog
+    if (uiState.showDateRangePicker) {
+        DateRangePickerDialog(
+            onConfirm = onDateRangeSelected,
+            onDismiss = onDateRangePickerDismissed,
+            initialStartMillis = uiState.customStartMillis,
+            initialEndMillis = uiState.customEndMillis
+        )
     }
 }
 
@@ -127,8 +139,9 @@ private fun TimeFilterSelector(
     ) {
         TimeFilter.entries.forEach { filter ->
             val isSelected = filter == selectedFilter
+            val displayLabel = if (filter == TimeFilter.CUSTOM) "📅 Rango" else filter.label
             Text(
-                text = filter.label,
+                text = displayLabel,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,

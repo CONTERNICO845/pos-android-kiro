@@ -4,5 +4,6 @@ enum class TimeFilter(val label: String) {
     TODAY("Hoy"),
     YESTERDAY("Ayer"),
     THIS_MONTH("Este mes"),
-    ALL("Todo")
+    ALL("Todo"),
+    CUSTOM("Personalizado")
 }

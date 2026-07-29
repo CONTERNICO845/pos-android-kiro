@@ -21,50 +21,76 @@ class StatsViewModel(
 ) : ViewModel() {
 
     private val _selectedFilter = MutableStateFlow(TimeFilter.TODAY)
+    private val _customRange = MutableStateFlow<Pair<Long, Long>?>(null)
+    private val _showDateRangePicker = MutableStateFlow(false)
 
-    val uiState: StateFlow<StatsUiState> = _selectedFilter
-        .flatMapLatest { filter ->
-            val (start, end) = computeRange(filter)
-
-            combine(
-                orderRepository.getTotalRevenueFlow(start, end),
-                orderRepository.getOrderCountFlow(start, end),
-                orderRepository.getCustomerCountFlow(start, end),
-                orderRepository.getTopProductsFlow(start, end),
-                orderRepository.getRecentOrdersFlow(start, end)
-            ) { revenue, count, customers, products, orders ->
-                StatsUiState(
-                    selectedFilter = filter,
-                    totalRevenue = revenue,
-                    orderCount = count,
-                    averageTicket = if (count > 0) revenue / count else 0.0,
-                    customerCount = customers,
-                    topProducts = products,
-                    recentOrders = orders,
-                    isLoading = false
-                )
-            }
+    val uiState: StateFlow<StatsUiState> = combine(
+        _selectedFilter,
+        _customRange,
+        _showDateRangePicker
+    ) { filter, customRange, showPicker ->
+        Triple(filter, customRange, showPicker)
+    }.flatMapLatest { (filter, customRange, showPicker) ->
+        val (start, end) = if (filter == TimeFilter.CUSTOM && customRange != null) {
+            customRange
+        } else {
+            computeRange(filter)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = StatsUiState()
-        )
+
+        combine(
+            orderRepository.getTotalRevenueFlow(start, end),
+            orderRepository.getOrderCountFlow(start, end),
+            orderRepository.getCustomerCountFlow(start, end),
+            orderRepository.getTopProductsFlow(start, end),
+            orderRepository.getRecentOrdersFlow(start, end)
+        ) { revenue, count, customers, products, orders ->
+            StatsUiState(
+                selectedFilter = filter,
+                totalRevenue = revenue,
+                orderCount = count,
+                averageTicket = if (count > 0) revenue / count else 0.0,
+                customerCount = customers,
+                topProducts = products,
+                recentOrders = orders,
+                isLoading = false,
+                customStartMillis = customRange?.first,
+                customEndMillis = customRange?.second,
+                showDateRangePicker = showPicker
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = StatsUiState()
+    )
 
     fun onFilterChange(filter: TimeFilter) {
-        _selectedFilter.value = filter
+        if (filter == TimeFilter.CUSTOM) {
+            _showDateRangePicker.value = true
+        } else {
+            _customRange.value = null
+            _selectedFilter.value = filter
+        }
+    }
+
+    fun onDateRangeSelected(startMillis: Long, endMillis: Long) {
+        val zone = ZoneId.systemDefault()
+        val endDate = Instant.ofEpochMilli(endMillis).atZone(zone).toLocalDate()
+        val adjustedEnd = endDate.atTime(LocalTime.of(23, 59, 59, 999_000_000))
+            .atZone(zone)
+            .toInstant()
+            .toEpochMilli()
+
+        _customRange.value = Pair(startMillis, adjustedEnd)
+        _selectedFilter.value = TimeFilter.CUSTOM
+        _showDateRangePicker.value = false
+    }
+
+    fun onDateRangePickerDismissed() {
+        _showDateRangePicker.value = false
     }
 
     companion object {
-        /**
-         * Computes the start and end timestamps for the given [filter] based on
-         * the device's default timezone.
-         *
-         * @param filter The time filter to compute the range for.
-         * @param now An optional "current time" in epoch millis, defaults to
-         *            [System.currentTimeMillis]. Exposed for testability.
-         * @return A [Pair] of (startMillis, endMillis) inclusive.
-         */
         fun computeRange(
             filter: TimeFilter,
             now: Long = System.currentTimeMillis()
@@ -93,6 +119,9 @@ class StatsViewModel(
                     Pair(start, now)
                 }
                 TimeFilter.ALL -> {
+                    Pair(0L, now)
+                }
+                TimeFilter.CUSTOM -> {
                     Pair(0L, now)
                 }
             }
