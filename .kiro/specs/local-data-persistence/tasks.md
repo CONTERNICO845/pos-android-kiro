@@ -29,7 +29,7 @@ use unit tests, Kotest property-based tests, and instrumented Room in-memory DAO
     - Declare `@PrimaryKey val id: String`, `val emoji: String`, `val name: String`
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
 
-  - [-]* 2.2 Write property test for entity field preservation (Property 1)
+  - [x]* 2.2 Write property test for entity field preservation (Property 1)
     - **Property 1: Entity field preservation**
     - Use `checkAll(100, Arb.string(), Arb.string(), Arb.string())` to verify that constructing `MenuItemEntity(id, emoji, name)` and reading back its fields always returns the identical values
     - File: `app/src/test/java/com/example/puntodeventa/data/local/MenuItemEntityTest.kt`
@@ -43,7 +43,7 @@ use unit tests, Kotest property-based tests, and instrumented Room in-memory DAO
     - Declare `@Query("DELETE FROM menu_items WHERE id = :id") suspend fun deleteById(id: String)`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ]* 3.2 Write instrumented DAO tests (Property 2 + example-based)
+  - [x]* 3.2 Write instrumented DAO tests (Property 2 + example-based)
     - **Property 2: Upsert replaces existing row**
     - Use `Room.inMemoryDatabaseBuilder` in `@Before`; run `checkAll(100, Arb.string(), Arb.string(), Arb.string(), Arb.string())` to verify that inserting a second entity with the same `id` but different `emoji`/`name` results in exactly one row matching the second values
     - Also add example-based cases: insert + `getAllMenuItems` returns item; `deleteById` removes item; `deleteById` with missing id is no-op; Flow emits after insert
@@ -58,7 +58,7 @@ use unit tests, Kotest property-based tests, and instrumented Room in-memory DAO
     - Build with `Room.databaseBuilder(..., "punto_de_venta_db").fallbackToDestructiveMigration()`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 8.1, 8.3_
 
-  - [ ]* 4.2 Write unit test for AppDatabase singleton invariant (Property 3)
+  - [x]* 4.2 Write unit test for AppDatabase singleton invariant (Property 3)
     - **Property 3: AppDatabase singleton invariant**
     - Call `AppDatabase.getInstance(context)` multiple times sequentially and verify referential equality (`assertSame`) across all returned instances
     - File: `app/src/androidTest/java/com/example/puntodeventa/data/local/AppDatabaseTest.kt`
@@ -76,13 +76,13 @@ use unit tests, Kotest property-based tests, and instrumented Room in-memory DAO
     - Add private extension functions `MenuItemEntity.toDomain()` and `MenuItem.toEntity()`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ]* 6.2 Write property test for entity-to-domain mapping round-trip (Property 4)
+  - [x]* 6.2 Write property test for entity-to-domain mapping round-trip (Property 4)
     - **Property 4: Repository entity-to-domain mapping round-trip**
     - Use `checkAll(100, Arb.string(), Arb.string(), Arb.string())` with a fake DAO that emits a list of one `MenuItemEntity`; collect `menuItems` and verify each `MenuItem` field matches the entity
     - File: `app/src/test/java/com/example/puntodeventa/data/repository/MenuRepositoryTest.kt`
     - **Validates: Requirements 4.2, 4.6**
 
-  - [ ]* 6.3 Write property test for domain-to-entity mapping round-trip (Property 5)
+  - [x]* 6.3 Write property test for domain-to-entity mapping round-trip (Property 5)
     - **Property 5: Repository domain-to-entity mapping round-trip**
     - Use `checkAll(100, Arb.string(), Arb.string(), Arb.string())` with a capturing fake DAO; call `repo.insert(MenuItem(id, emoji, name))` and assert the captured `MenuItemEntity` has identical `id`, `emoji`, `name`
     - File: `app/src/test/java/com/example/puntodeventa/data/repository/MenuRepositoryTest.kt`
@@ -99,31 +99,31 @@ use unit tests, Kotest property-based tests, and instrumented Room in-memory DAO
     - Keep `openDialog`, `openEditDialog`, `dismissDialog` updating `_dialogState` only
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.7_
 
-  - [ ]* 7.2 Write property test — ViewModel mirrors repository items (Property 6)
+  - [x]* 7.2 Write property test — ViewModel mirrors repository items (Property 6)
     - **Property 6: ViewModel mirrors repository items**
     - Use `checkAll(100, Arb.list(Arb.bind(Arb.string(), Arb.string(), Arb.string()) { id, e, n -> MenuItem(id, e, n) }))` with a `FakeMenuRepository`; emit the list, collect `uiState`, assert `menuItems` matches
     - File: `app/src/test/java/com/example/puntodeventa/ui/home/HomeViewModelTest.kt`
     - **Validates: Requirements 5.2**
 
-  - [ ]* 7.3 Write property test — saveMenu new item (Property 7)
+  - [x]* 7.3 Write property test — saveMenu new item (Property 7)
     - **Property 7: saveMenu correctness — new item**
     - Use `checkAll(100, Arb.string(1..20).filter { it.isNotBlank() }, Arb.string(1..50).filter { it.isNotBlank() })` with a `FakeMenuRepository`; call `saveMenu(emoji, name)` in create mode; assert `insert` called once with correct `emoji`, trimmed `name`, and a non-empty id
     - File: `app/src/test/java/com/example/puntodeventa/ui/home/HomeViewModelTest.kt`
     - **Validates: Requirements 5.3**
 
-  - [ ]* 7.4 Write property test — saveMenu preserves id in edit mode (Property 8)
+  - [x]* 7.4 Write property test — saveMenu preserves id in edit mode (Property 8)
     - **Property 8: saveMenu correctness — edit mode preserves id**
     - Use `checkAll(100, Arb.string(), Arb.string(1..20).filter { it.isNotBlank() }, Arb.string(1..50).filter { it.isNotBlank() })` where the first arg is the existing item's `id`; call `openEditDialog(existingItem)` then `saveMenu(emoji, name)`; assert the `MenuItem` passed to `insert` has `id == existingItem.id`
     - File: `app/src/test/java/com/example/puntodeventa/ui/home/HomeViewModelTest.kt`
     - **Validates: Requirements 5.4**
 
-  - [ ]* 7.5 Write property test — deleteMenu delegates to repository (Property 9)
+  - [x]* 7.5 Write property test — deleteMenu delegates to repository (Property 9)
     - **Property 9: deleteMenu delegation**
     - Use `checkAll(100, Arb.string())` with a `FakeMenuRepository`; call `deleteMenu(id)`; assert `deleteById` was called exactly once with the same `id`
     - File: `app/src/test/java/com/example/puntodeventa/ui/home/HomeViewModelTest.kt`
     - **Validates: Requirements 5.5, 4.4**
 
-  - [ ]* 7.6 Write property test — blank-input validation gate (Property 10)
+  - [x]* 7.6 Write property test — blank-input validation gate (Property 10)
     - **Property 10: Blank-input validation gate**
     - Use `checkAll(100, Arb.string().filter { it.isBlank() }, Arb.string(1..20))` for blank name; and `checkAll(100, Arb.string(1..20), Arb.string().filter { it.isBlank() })` for blank emoji; assert `FakeMenuRepository.insertCallCount == 0` after each call
     - File: `app/src/test/java/com/example/puntodeventa/ui/home/HomeViewModelTest.kt`

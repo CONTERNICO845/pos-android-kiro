@@ -1,6 +1,7 @@
 package com.example.puntodeventa.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,13 +26,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puntodeventa.data.model.MenuItem
-import com.example.puntodeventa.ui.theme.CardBackground
-import com.example.puntodeventa.ui.theme.CardIconTint
-import com.example.puntodeventa.ui.theme.CardText
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun MenuItemCard(
     item: MenuItem,
+    onClick: () -> Unit,
     onEditClick: (MenuItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -39,7 +39,8 @@ fun MenuItemCard(
         modifier = modifier
             .size(200.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(CardBackground)
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .clickable(onClick = onClick)
     ) {
         // Edit icon — top-right corner
         IconButton(
@@ -52,7 +53,7 @@ fun MenuItemCard(
             Icon(
                 imageVector        = Icons.Default.Edit,
                 contentDescription = "Editar ${item.name}",
-                tint               = CardIconTint,
+                tint               = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier           = Modifier.size(20.dp)
             )
         }
@@ -70,7 +71,7 @@ fun MenuItemCard(
             Spacer(Modifier.height(8.dp))
             Text(
                 text       = item.name.uppercase(),
-                color      = CardText,
+                color      = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
                 fontSize   = 13.sp,
                 textAlign  = TextAlign.Center,

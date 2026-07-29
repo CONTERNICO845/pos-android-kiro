@@ -48,29 +48,24 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.puntodeventa.data.model.Category
 import com.example.puntodeventa.data.model.MenuItem
-import com.example.puntodeventa.ui.theme.ButtonCancel
-import com.example.puntodeventa.ui.theme.ButtonConfirm
-import com.example.puntodeventa.ui.theme.InputBackground
-import com.example.puntodeventa.ui.theme.InputBorder
-import com.example.puntodeventa.ui.theme.InputHint
-import com.example.puntodeventa.ui.theme.InputText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 // ── Field colors for modal-level fields (white background, green border) ──────
 
 @Composable
 private fun modalFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor      = InputBorder,
-    unfocusedBorderColor    = InputBorder,
-    cursorColor             = InputText,
-    focusedLabelColor       = InputBorder,
-    unfocusedLabelColor     = InputHint,
-    focusedTextColor        = InputText,
-    unfocusedTextColor      = InputText,
-    focusedContainerColor   = InputBackground,
-    unfocusedContainerColor = InputBackground,
-    errorBorderColor        = ButtonCancel,
-    errorLabelColor         = ButtonCancel
+    focusedBorderColor      = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor    = MaterialTheme.colorScheme.primary,
+    cursorColor             = MaterialTheme.colorScheme.onSurface,
+    focusedLabelColor       = MaterialTheme.colorScheme.primary,
+    unfocusedLabelColor     = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedTextColor        = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor      = MaterialTheme.colorScheme.onSurface,
+    focusedContainerColor   = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    errorBorderColor        = MaterialTheme.colorScheme.error,
+    errorLabelColor         = MaterialTheme.colorScheme.error
 )
 
 // ── NewProductModal ───────────────────────────────────────────────────────────
@@ -130,7 +125,7 @@ fun NewProductModal(
             bottomStart = 0.dp,
             bottomEnd   = 0.dp
         ),
-        containerColor = InputBackground,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null   // custom header replaces the default handle (Req 1.2)
     ) {
         // Delegate all field-level content to the inner composable.
@@ -178,7 +173,7 @@ private fun NewProductFormContent(
                 text       = if (uiState.isEditMode) "Editar Producto" else "Nuevo Producto",
                 fontWeight = FontWeight.Bold,
                 fontSize   = 20.sp,
-                color      = InputText
+                color      = MaterialTheme.colorScheme.onSurface
             )
             // "X" button — disabled while saving (Req 1.4)
             IconButton(
@@ -188,7 +183,7 @@ private fun NewProductFormContent(
                 Icon(
                     imageVector        = Icons.Default.Close,
                     contentDescription = "Cerrar",
-                    tint               = if (uiState.isSaving) InputHint else InputText
+                    tint               = if (uiState.isSaving) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -276,7 +271,7 @@ private fun NewProductFormContent(
             text       = "Personalizaciones",
             fontWeight = FontWeight.Bold,
             fontSize   = 16.sp,
-            color      = InputText
+            color      = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.height(8.dp))
 
@@ -301,10 +296,10 @@ private fun NewProductFormContent(
         // ── "+ Grupo" button (Req 6.1) ───────────────────────────────────
         OutlinedButton(
             onClick  = { viewModel.addGroup() },
-            border   = BorderStroke(1.dp, InputBorder),
+            border   = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("+ Grupo", color = InputBorder)
+            Text("+ Grupo", color = MaterialTheme.colorScheme.primary)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -313,7 +308,7 @@ private fun NewProductFormContent(
         if (uiState.error != null) {
             Text(
                 text     = uiState.error,
-                color    = ButtonCancel,
+                color    = MaterialTheme.colorScheme.error,
                 fontSize = 13.sp
             )
             Spacer(Modifier.height(8.dp))
@@ -337,7 +332,7 @@ private fun NewProductFormContent(
             Button(
                 onClick  = { viewModel.save() },
                 enabled  = !uiState.isSaving,
-                colors   = ButtonDefaults.buttonColors(containerColor = ButtonConfirm),
+                colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 modifier = Modifier.weight(1f)
             ) {
                 if (uiState.isSaving) {
@@ -421,7 +416,7 @@ private fun MenuDropdown(
 
 /**
  * An [ExposedDropdownMenuBox] that lists all [Category]s for the selected menu, with
- * a special "+ Nueva categoría..." entry at the bottom rendered in [ButtonConfirm] color.
+ * a special "+ Nueva categoría..." entry at the bottom rendered in secondary color.
  *
  * When [menuSelected] is false the dropdown is disabled (Req 5.9).
  * [showInlineCreation] toggles an inline creation sub-form (Req 5.3).
@@ -484,12 +479,12 @@ private fun CategoryDropdown(
                         )
                     }
 
-                    // Special entry: "+ Nueva categoría..." in ButtonConfirm color (Req 5.2)
+                    // Special entry: "+ Nueva categoría..." in secondary color (Req 5.2)
                     DropdownMenuItem(
                         text    = {
                             Text(
                                 text  = "+ Nueva categoría...",
-                                color = ButtonConfirm
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         },
                         onClick = {
@@ -525,7 +520,7 @@ private fun CategoryDropdown(
             ) {
                 Button(
                     onClick  = onSaveInlineCategory,
-                    colors   = ButtonDefaults.buttonColors(containerColor = ButtonConfirm),
+                    colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Guardar categoría", color = Color.White)
@@ -535,7 +530,7 @@ private fun CategoryDropdown(
                     onClick  = onCancelInlineCategory,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Cancelar", color = InputBorder)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

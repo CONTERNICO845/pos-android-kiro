@@ -12,9 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -24,6 +29,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,13 +46,7 @@ import com.example.puntodeventa.data.model.Category
 import com.example.puntodeventa.data.model.Product
 import com.example.puntodeventa.ui.newproduct.NewProductModal
 import com.example.puntodeventa.ui.newproduct.NewProductViewModel
-import com.example.puntodeventa.ui.theme.CardBackground
-import com.example.puntodeventa.ui.theme.CardText
-import com.example.puntodeventa.ui.theme.InputBackground
-import com.example.puntodeventa.ui.theme.InputBorder
-import com.example.puntodeventa.ui.theme.InputHint
-import com.example.puntodeventa.ui.theme.InputText
-import com.example.puntodeventa.ui.theme.NavRailIconSelected
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun ConfigurationScreen(
@@ -58,12 +58,26 @@ fun ConfigurationScreen(
     var showModal by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Row 1 — Category tabs
-        CategoryTabsRow(
-            categories = uiState.categories,
-            selectedCategory = uiState.selectedCategory,
-            onCategorySelected = { viewModel.selectCategory(it) }
-        )
+        // Row 1 — Category tabs + delete button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CategoryTabsRow(
+                categories = uiState.categories,
+                selectedCategory = uiState.selectedCategory,
+                onCategorySelected = { viewModel.selectCategory(it) },
+                modifier = Modifier.weight(1f)
+            )
+            if (uiState.selectedCategory != null) {
+                IconButton(onClick = { viewModel.requestDeleteCategory() }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Eliminar categoría"
+                    )
+                }
+            }
+        }
 
         // Row 2 — Search + action buttons
         ActionBarRow(
@@ -141,6 +155,13 @@ fun ConfigurationScreen(
             }
         )
     }
+
+    if (uiState.showDeleteCategoryDialog) {
+        DeleteCategoryDialog(
+            onConfirm = { viewModel.confirmDeleteCategory() },
+            onDismiss = { viewModel.dismissDeleteCategoryDialog() }
+        )
+    }
 }
 
 /**
@@ -173,7 +194,7 @@ private fun CategoryTabsRow(
                 text = {
                     Text(
                         text = category.name,
-                        color = if (isSelected) NavRailIconSelected else CardText,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 }
@@ -184,12 +205,12 @@ private fun CategoryTabsRow(
     if (categories.size > 4) {
         ScrollableTabRow(
             selectedTabIndex = selectedIndex,
-            containerColor = CardBackground,
-            contentColor = CardText,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                    color = CardBackground   // suppress pill by matching container color
+                    color = MaterialTheme.colorScheme.primaryContainer   // suppress pill by matching container color
                 )
             },
             modifier = modifier.fillMaxWidth()
@@ -199,13 +220,13 @@ private fun CategoryTabsRow(
     } else {
         TabRow(
             selectedTabIndex = selectedIndex,
-            containerColor = CardBackground,
-            contentColor = CardText,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             indicator = { tabPositions ->
                 if (tabPositions.isNotEmpty()) {
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                        color = CardBackground   // suppress pill by matching container color
+                        color = MaterialTheme.colorScheme.primaryContainer   // suppress pill by matching container color
                     )
                 }
             },
@@ -236,7 +257,7 @@ private fun ActionBarRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(CardBackground)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(8.dp)
             .testTag("ActionBarRow"),
         verticalAlignment = Alignment.CenterVertically
@@ -248,15 +269,15 @@ private fun ActionBarRow(
             label = { Text("Buscar Producto") },
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = InputBorder,
-                unfocusedBorderColor = InputBorder,
-                cursorColor = InputText,
-                focusedLabelColor = InputBorder,
-                unfocusedLabelColor = InputHint,
-                focusedTextColor = InputText,
-                unfocusedTextColor = InputText,
-                focusedContainerColor = InputBackground,
-                unfocusedContainerColor = InputBackground
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                cursorColor = MaterialTheme.colorScheme.onSurface,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
             ),
             modifier = Modifier.weight(1f)
         )
@@ -264,12 +285,12 @@ private fun ActionBarRow(
         // Outlined button: Modificar JSON
         OutlinedButton(
             onClick = onModificarJsonClick,
-            border = BorderStroke(1.dp, NavRailIconSelected),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(
                 text = "Modificar JSON",
-                color = NavRailIconSelected,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp
             )
         }
@@ -277,12 +298,12 @@ private fun ActionBarRow(
         // Outlined button: Importar JSON
         OutlinedButton(
             onClick = onImportarJsonClick,
-            border = BorderStroke(1.dp, NavRailIconSelected),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(
                 text = "Importar JSON",
-                color = NavRailIconSelected,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp
             )
         }
@@ -290,12 +311,12 @@ private fun ActionBarRow(
         // Outlined button: Exportar JSON
         OutlinedButton(
             onClick = onExportarJsonClick,
-            border = BorderStroke(1.dp, NavRailIconSelected),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(
                 text = "Exportar JSON",
-                color = NavRailIconSelected,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp
             )
         }
@@ -304,8 +325,8 @@ private fun ActionBarRow(
         Button(
             onClick = onNuevoProductoClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = NavRailIconSelected,
-                contentColor = CardText
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier.padding(start = 8.dp)
         ) {
@@ -316,4 +337,15 @@ private fun ActionBarRow(
             )
         }
     }
+}
+
+@Composable
+private fun DeleteCategoryDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar categoría") },
+        text = { Text("¿Estás seguro? Eliminar esta categoría eliminará permanentemente todos los productos dentro de ella.") },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Eliminar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }

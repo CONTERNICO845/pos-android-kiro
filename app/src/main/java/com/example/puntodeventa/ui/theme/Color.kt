@@ -37,3 +37,18 @@ val InputBorder         = Color(0xFF4A8C1C)   // Name text field border
 val InputBackground     = Color(0xFFFFFFFF)
 val InputText           = Color(0xFF1A1A1A)
 val InputHint           = Color(0xFF9E9E9E)   // Placeholder "Tu Nombre Aqui"
+
+// ── Printer Config ──────────────────────────────────────────────────────────
+val StatusPanelBackground = Color(0xFFE0E0E0)   // Light gray status panel surface
+
+// ── Checkout Panel (Light Theme) ─────────────────────────────────────────────
+val CheckoutBackground    = Color(0xFFFFFFFF)   // Panel background
+val CheckoutSectionBg     = Color(0xFFF5F5F5)   // Section backgrounds
+val CheckoutChangePanel   = Color(0xFFFFFFFF)   // Change assistant panel — white for max contrast
+val CheckoutAlertBg       = Color(0xFFFFE0B2)   // Warm orange highlight for alert box
+val ChangeAssistantLabel  = Color(0xFF616161)   // Medium-dark gray for "Total", "Recibido", "Cambio" labels
+val ChangeAssistantValue  = Color(0xFF1B5E20)   // Deep green for currency values
+val ChangeAlertText       = Color(0xFFE65100)   // Strong orange for alert text
+val CoinButtonBg          = Color(0xFFA5D6A7)   // Lighter green for coin buttons
+val ButtonGolden          = Color(0xFFFFC107)   // Bright golden for "ready to charge" TOTAL button
+val ButtonGoldenText      = Color(0xFF3E2723)   // Dark brown text on golden background

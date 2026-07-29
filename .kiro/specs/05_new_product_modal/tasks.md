@@ -56,15 +56,15 @@ only adds UI and ViewModel code in a new `ui/newproduct/` package.
     - `updateGroupName`: max 120, clears `groupNameError` on non-whitespace input, preserves sibling `GroupDraft` referential identity
     - `updateGroupSelectionType`: updates only `selectionType` of the target group
     - _Requirements: 6.2, 6.3, 6.4, 6.7, 7.3, 10.1, 10.4, 10.7, 10.8_
-  - [ ]* 5.2 Write property test — Property 1: addGroup size invariant
+  - [x]* 5.2 Write property test — Property 1: addGroup size invariant
     - **Property 1: addGroup size invariant**
     - For N ≥ 0 calls to `addGroup()` from empty state, `groups.size == N`
     - **Validates: Requirements 11.1**
-  - [ ]* 5.3 Write property test — Property 2: addGroup / removeGroup inverse
+  - [x]* 5.3 Write property test — Property 2: addGroup / removeGroup inverse
     - **Property 2: addGroup / removeGroup inverse**
     - Add N groups then remove all in descending index order → `groups` is empty
     - **Validates: Requirements 11.2**
-  - [ ]* 5.4 Write property test — Property 3: GroupDraft draftId global uniqueness
+  - [x]* 5.4 Write property test — Property 3: GroupDraft draftId global uniqueness
     - **Property 3: GroupDraft draftId global uniqueness**
     - After any sequence of `addGroup()` calls, all `draftId` values are pairwise distinct
     - **Validates: Requirements 11.3, 10.1**
@@ -74,19 +74,19 @@ only adds UI and ViewModel code in a new `ui/newproduct/` package.
     - `updateOptionName`: max 120, clears `optionNameError` on non-whitespace input, preserves sibling `OptionDraft` referential identity
     - `updateOptionExtraPrice`: delegates to `sanitizePriceInput`, clears `optionPriceError` when parsed value ≥ 0
     - _Requirements: 8.2, 8.3, 8.4, 8.7, 8.8, 10.3, 10.5, 10.7, 10.8_
-  - [ ]* 5.6 Write property test — Property 4: addOption size invariant
+  - [x]* 5.6 Write property test — Property 4: addOption size invariant
     - **Property 4: addOption size invariant**
     - For M ≥ 0 calls to `addOption(groupIndex)` on a newly created group, `group.options.size == M + 1`
     - **Validates: Requirements 11.4**
-  - [ ]* 5.7 Write property test — Property 5: updateGroupName preserves all draftIds
+  - [x]* 5.7 Write property test — Property 5: updateGroupName preserves all draftIds
     - **Property 5: updateGroupName preserves all draftIds**
     - Calling `updateGroupName(index, newName)` leaves every `GroupDraft.draftId` unchanged
     - **Validates: Requirements 11.5, 10.4**
-  - [ ]* 5.8 Write property test — Property 6: updateOptionName preserves all option draftIds
+  - [x]* 5.8 Write property test — Property 6: updateOptionName preserves all option draftIds
     - **Property 6: updateOptionName preserves all option draftIds within group**
     - Calling `updateOptionName(g, o, name)` leaves every `OptionDraft.draftId` in the group unchanged
     - **Validates: Requirements 11.6, 10.5**
-  - [ ]* 5.9 Write property test — Property 7: OptionDraft draftId uniqueness within group
+  - [x]* 5.9 Write property test — Property 7: OptionDraft draftId uniqueness within group
     - **Property 7: OptionDraft draftId uniqueness within a group**
     - After any sequence of `addOption(groupIndex)` calls, all `draftId` values within that group are pairwise distinct
     - **Validates: Requirements 11.7, 10.3**
@@ -100,7 +100,7 @@ only adds UI and ViewModel code in a new `ui/newproduct/` package.
     - On failure: `isSaving = false`, set `error` message; Room auto-rolls back
     - _Requirements: 9.2, 9.3, 9.4, 9.6_
 
-- [ ] 7. Checkpoint — Ensure all ViewModel tests pass
+- [x] 7. Checkpoint — Ensure all ViewModel tests pass
   - Ensure all unit and property tests for `NewProductViewModel` pass, ask the user if questions arise.
 
 - [x] 8. Implement `SelectionTypeDropdown` composable
@@ -138,7 +138,7 @@ only adds UI and ViewModel code in a new `ui/newproduct/` package.
   - [x] 12.2 Construct `NewProductViewModel.Factory` in `MainActivity` alongside `ConfigurationViewModel.Factory`, passing `productRepository`, `categoryRepository`, `menuRepository`, and `database`; pass `newProductViewModel` to `ConfigurationScreen`
     - _Requirements: 9.2_
 
-- [ ] 13. Final checkpoint — Ensure all tests pass
+- [x] 13. Final checkpoint — Ensure all tests pass
   - Ensure all unit tests, property tests, and instrumented DAO tests pass, ask the user if questions arise.
 
 ---

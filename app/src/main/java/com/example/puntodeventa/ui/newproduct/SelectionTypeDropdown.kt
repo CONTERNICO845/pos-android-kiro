@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxWidth
 import com.example.puntodeventa.data.local.SelectionType
-import com.example.puntodeventa.ui.theme.CardText
+import androidx.compose.material3.MaterialTheme
 
 /** Human-readable labels for each [SelectionType] value. */
 private val selectionTypeLabels = mapOf(
@@ -52,7 +52,7 @@ fun SelectionTypeDropdown(
             value         = selectionTypeLabels[selectedType] ?: "",
             onValueChange = {},
             readOnly      = true,
-            label         = { Text("Comportamiento", color = CardText) },
+            label         = { Text("Comportamiento", color = MaterialTheme.colorScheme.onPrimaryContainer) },
             trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors        = groupFieldColors(),
             modifier      = Modifier

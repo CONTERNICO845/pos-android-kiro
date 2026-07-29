@@ -28,7 +28,8 @@ data class ConfigurationUiState(
     val searchQuery: String = "",
     val expandedProductMenuId: String? = null,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val showDeleteCategoryDialog: Boolean = false
 )
 
 internal fun applyFilter(products: List<Product>, query: String): List<Product> {
@@ -53,6 +54,7 @@ class ConfigurationViewModel(
     private val _expandedMenuId = MutableStateFlow<String?>(null)
     private val _error = MutableStateFlow<String?>(null)
     private val _isLoading = MutableStateFlow(true)
+    private val _showDeleteCategoryDialog = MutableStateFlow(false)
 
     // ── Reactive pipeline ─────────────────────────────────────────────────────
 
@@ -101,7 +103,8 @@ class ConfigurationViewModel(
         _searchQuery,
         _expandedMenuId,
         _error,
-        _isLoading
+        _isLoading,
+        _showDeleteCategoryDialog
     ) { args ->
         @Suppress("UNCHECKED_CAST")
         val categories = args[0] as List<Category>
@@ -115,6 +118,7 @@ class ConfigurationViewModel(
         val expandedMenuId = args[5] as String?
         val error = args[6] as String?
         val isLoading = args[7] as Boolean
+        val showDeleteCategoryDialog = args[8] as Boolean
 
         ConfigurationUiState(
             categories = categories,
@@ -124,11 +128,12 @@ class ConfigurationViewModel(
             searchQuery = searchQuery,
             expandedProductMenuId = expandedMenuId,
             isLoading = isLoading,
-            error = error
+            error = error,
+            showDeleteCategoryDialog = showDeleteCategoryDialog
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = SharingStarted.Eagerly,
         initialValue = ConfigurationUiState(isLoading = true)
     )
 
@@ -205,6 +210,40 @@ class ConfigurationViewModel(
     /** Clears the error state after the UI has consumed it. */
     fun clearError() {
         _error.value = null
+    }
+
+    /**
+     * Opens the delete category confirmation dialog (AC-02.3).
+     */
+    fun requestDeleteCategory() {
+        _showDeleteCategoryDialog.value = true
+    }
+
+    /**
+     * Cancels the delete category operation and closes the dialog (AC-02.6).
+     */
+    fun dismissDeleteCategoryDialog() {
+        _showDeleteCategoryDialog.value = false
+    }
+
+    /**
+     * Confirms and executes the category deletion (AC-02.7, AC-02.8, AC-02.10, AC-02.11).
+     * Closes the dialog immediately, then asynchronously deletes the category.
+     * On success, the categoriesFlow.onEach block auto-selects the next category (AC-02.9).
+     * On error, preserves selectedCategory and sets error message.
+     */
+    fun confirmDeleteCategory() {
+        val categoryToDelete = _selectedCategory.value ?: return
+        _showDeleteCategoryDialog.value = false
+        viewModelScope.launch {
+            try {
+                categoryRepository.deleteById(categoryToDelete.id)
+                // selectedCategory is auto-updated via categoriesFlow.onEach
+                // which calls _selectedCategory.value = cats.firstOrNull()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error desconocido"
+            }
+        }
     }
 
     // ── Inner Factory ─────────────────────────────────────────────────────────

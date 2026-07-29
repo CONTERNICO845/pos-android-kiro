@@ -1,9 +1,20 @@
 # Implementation Plan — 06 Bugfixes Config
 
+## Overview
+
+This implementation plan covers fixes for four bugs identified in the Configuration Screen and New Product Modal components. Each bug is treated independently with its own bug condition, exploration tests, preservation tests, and implementation tasks. The bugs being addressed are:
+
+1. **Modal Blinking** - Excessive recomposition causing visual flickering during text input
+2. **Inactive "Editar" Button** - Edit functionality not connecting to modal
+3. **Duplication Shared IDs** - Incomplete deep copy when duplicating products
+4. **Missing Top Padding** - LazyColumn content flush against action bar
+
+Each bug follows the bug condition methodology with exploration tests (run before fixes), preservation tests (ensuring no regressions), and verification tests (confirming fixes work).
+
+## Tasks
+
 > Each bug is an independent commit. Tasks within a bug must be completed in order.
 > Exploration and preservation tests are written BEFORE the fix is applied.
-
----
 
 ## Task Dependency Graph
 
@@ -442,7 +453,7 @@
 
 - [x] 15. Fix Bug 4 — Apply contentPadding to LazyColumn and top padding to Box
 
-  - [-] 15.1 Add `contentPadding` to the `LazyColumn` in `ConfigurationScreen`
+|x  - [-] 15.1 Add `contentPadding` to the `LazyColumn` in `ConfigurationScreen`
     - **File**: `app/src/main/java/com/example/puntodeventa/ui/configuration/ConfigurationScreen.kt`
     - Locate the `LazyColumn` inside the `else` branch of the state-machine `when` block.
     - Add `contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)` as a named argument.
@@ -453,7 +464,7 @@
       first `ProductCard` inset 8 dp below the `Box` top edge_
     - _Requirements: 2.10, 2.11_
 
-  - [ ] 15.2 Add `Modifier.padding(top = 8.dp)` to the `Box` container
+  - [x] 15.2 Add `Modifier.padding(top = 8.dp)` to the `Box` container
     - **File**: `app/src/main/java/com/example/puntodeventa/ui/configuration/ConfigurationScreen.kt`
     - Change the `Box` modifier from:
       `Box(modifier = Modifier.fillMaxSize())`
@@ -465,18 +476,37 @@
     - _Preservation: empty-state text remains centered in the reduced content area (Req 3.11)_
     - _Requirements: 2.10, 2.11_
 
-  - [ ] 15.3 Verify bug condition exploration test now passes
+  - [x] 15.3 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** — First ProductCard Has Top Gap
     - **IMPORTANT**: Re-run the SAME test written in task 13 — do NOT write a new test.
     - **EXPECTED OUTCOME**: Test PASSES (`firstCard.topOffset > 0.dp` is satisfied).
     - _Requirements: 2.10, 2.11_
 
-  - [ ] 15.4 Verify preservation tests still pass
+  - [x] 15.4 Verify preservation tests still pass
     - **Property 2: Preservation** — Empty State and Scroll Behavior Unchanged
     - **IMPORTANT**: Re-run the SAME tests written in task 14 — do NOT write new tests.
     - **EXPECTED OUTCOME**: All tests PASS (no regressions in empty state or scroll behavior).
 
-- [ ] 16. Checkpoint Bug 4 — all tests pass
+- [x] 16. Checkpoint Bug 4 — all tests pass
   - Run all Bug 4 tests.
   - Ensure tasks 13–15 are all checked off and all assertions green.
   - Commit with message: `fix(padding): add contentPadding to LazyColumn and top padding to Box`
+
+## Notes
+
+### Implementation Guidelines
+
+- **Test-First Approach**: Each bug requires exploration and preservation tests to be written and run on unfixed code before implementing the fix
+- **Commit Boundaries**: Each bug should be committed separately at its checkpoint task (4, 8, 12, 16)
+- **Cross-Bug Dependencies**: Bugs 2 & 3 both require the same one-shot DAO queries. If committed in order, Bug 2 adds them first; Bug 3 should verify they exist rather than re-adding them
+- **Property-Based Testing**: Use the `**Property N: Type** - [Title]` format for PBT tasks to enable hover status functionality
+
+### Bug Priority and Independence
+
+Bugs 1–4 are independent of each other and their wave pairs can run in any order. Within each bug, the exploration test and preservation test (odd wave) must exist on unfixed code before the implementation wave (even wave) is applied.
+
+### Testing Strategy
+
+- **Exploration Tests**: Confirm the bug exists by writing tests that fail on unfixed code
+- **Preservation Tests**: Ensure existing functionality remains unchanged using observation-first methodology
+- **Verification Tests**: Confirm fixes work by re-running the same exploration tests after implementation

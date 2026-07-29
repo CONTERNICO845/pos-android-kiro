@@ -20,9 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.puntodeventa.ui.theme.CardBackground
-import com.example.puntodeventa.ui.theme.CardIconTint
-import com.example.puntodeventa.ui.theme.CardText
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun AddMenuCard(
@@ -33,7 +31,7 @@ fun AddMenuCard(
         modifier = modifier
             .size(200.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(CardBackground)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -44,13 +42,13 @@ fun AddMenuCard(
             Icon(
                 imageVector        = Icons.Default.AddCircle,
                 contentDescription = "Agregar menú",
-                tint               = CardIconTint,
+                tint               = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier           = Modifier.size(80.dp)
             )
             Spacer(Modifier.height(12.dp))
             Text(
                 text       = "NOMBRE....",
-                color      = CardText,
+                color      = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.Bold,
                 fontSize   = 14.sp
             )

@@ -9,7 +9,7 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(product: ProductEntity)
 
-    @Query("SELECT * FROM products WHERE categoryId = :categoryId")
+    @Query("SELECT * FROM products WHERE categoryId = :categoryId ORDER BY name COLLATE NOCASE ASC, id ASC")
     fun getProductsByCategory(categoryId: String): Flow<List<ProductEntity>>
 
     @Query("SELECT * FROM products WHERE categoryId = :categoryId AND isActive = 1")

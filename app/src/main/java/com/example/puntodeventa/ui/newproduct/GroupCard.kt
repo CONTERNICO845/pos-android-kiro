@@ -26,10 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.puntodeventa.data.local.SelectionType
-import com.example.puntodeventa.ui.theme.CardBackground
-import com.example.puntodeventa.ui.theme.CardText
-import com.example.puntodeventa.ui.theme.InputBorder
-import com.example.puntodeventa.ui.theme.InputText
+import androidx.compose.material3.MaterialTheme
 
 /**
  * Returns [OutlinedTextFieldDefaults.colors] configured for the group/option fields
@@ -39,19 +36,19 @@ import com.example.puntodeventa.ui.theme.InputText
  */
 @Composable
 fun groupFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor      = CardText,
-    unfocusedBorderColor    = CardText.copy(alpha = 0.6f),
-    cursorColor             = CardText,
-    focusedLabelColor       = CardText,
-    unfocusedLabelColor     = CardText.copy(alpha = 0.7f),
-    focusedTextColor        = CardText,
-    unfocusedTextColor      = CardText,
-    errorBorderColor        = InputBorder,
-    errorLabelColor         = InputBorder,
-    errorTextColor          = InputText,
-    focusedContainerColor   = CardBackground,
-    unfocusedContainerColor = CardBackground,
-    errorContainerColor     = CardBackground
+    focusedBorderColor      = MaterialTheme.colorScheme.onPrimaryContainer,
+    unfocusedBorderColor    = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+    cursorColor             = MaterialTheme.colorScheme.onPrimaryContainer,
+    focusedLabelColor       = MaterialTheme.colorScheme.onPrimaryContainer,
+    unfocusedLabelColor     = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+    focusedTextColor        = MaterialTheme.colorScheme.onPrimaryContainer,
+    unfocusedTextColor      = MaterialTheme.colorScheme.onPrimaryContainer,
+    errorBorderColor        = MaterialTheme.colorScheme.primary,
+    errorLabelColor         = MaterialTheme.colorScheme.primary,
+    errorTextColor          = MaterialTheme.colorScheme.onSurface,
+    focusedContainerColor   = MaterialTheme.colorScheme.primaryContainer,
+    unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+    errorContainerColor     = MaterialTheme.colorScheme.primaryContainer
 )
 
 /**
@@ -80,7 +77,7 @@ fun GroupCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
@@ -102,7 +99,7 @@ fun GroupCard(
                     singleLine = true,
                     isError = group.groupNameError != null,
                     supportingText = group.groupNameError?.let { err ->
-                        { Text(text = err, color = CardText) }
+                        { Text(text = err, color = MaterialTheme.colorScheme.onPrimaryContainer) }
                     },
                     colors = groupFieldColors(),
                     modifier = Modifier.weight(1f)
@@ -115,7 +112,7 @@ fun GroupCard(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Eliminar grupo",
-                        tint = CardText
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -151,7 +148,7 @@ fun GroupCard(
             ) {
                 Text(
                     text = "+ Agregar opción",
-                    color = CardText
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
@@ -188,7 +185,7 @@ private fun OptionRow(
             singleLine = true,
             isError = option.optionNameError != null,
             supportingText = option.optionNameError?.let { err ->
-                { Text(text = err, color = CardText) }
+                { Text(text = err, color = MaterialTheme.colorScheme.onPrimaryContainer) }
             },
             colors = groupFieldColors(),
             modifier = Modifier.weight(1f)
@@ -205,7 +202,7 @@ private fun OptionRow(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             isError = option.optionPriceError != null,
             supportingText = option.optionPriceError?.let { err ->
-                { Text(text = err, color = CardText) }
+                { Text(text = err, color = MaterialTheme.colorScheme.onPrimaryContainer) }
             },
             colors = groupFieldColors(),
             modifier = Modifier.width(120.dp)
@@ -219,7 +216,7 @@ private fun OptionRow(
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Eliminar opción",
-                tint = CardText
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }

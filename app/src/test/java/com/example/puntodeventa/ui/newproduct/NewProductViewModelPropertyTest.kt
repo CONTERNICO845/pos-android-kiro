@@ -19,6 +19,7 @@ import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,12 +56,14 @@ private class FakeProductDao : ProductDao {
 private class FakeCustomizationGroupDao : CustomizationGroupDao {
     override suspend fun insertInternal(group: CustomizationGroupEntity) { /* no-op */ }
     override fun getGroupsByProduct(productId: String): Flow<List<CustomizationGroupEntity>> = flowOf(emptyList())
+    override suspend fun getGroupsByProductOnce(productId: String): List<CustomizationGroupEntity> = emptyList()
     override suspend fun deleteById(id: String) { /* no-op */ }
 }
 
 private class FakeCustomizationOptionDao : CustomizationOptionDao {
     override suspend fun insert(option: CustomizationOptionEntity) { /* no-op */ }
     override fun getOptionsByGroup(groupId: String): Flow<List<CustomizationOptionEntity>> = flowOf(emptyList())
+    override suspend fun getOptionsByGroupOnce(groupId: String): List<CustomizationOptionEntity> = emptyList()
     override suspend fun deleteById(id: String) { /* no-op */ }
 }
 
@@ -68,15 +71,14 @@ private class FakeCustomizationOptionDao : CustomizationOptionDao {
 
 /**
  * Creates a [NewProductViewModel] wired to fake repositories.
- * The [AppDatabase] parameter is never invoked in group/option tests (no `save()` call),
- * so we pass null via an unchecked cast — safe for these pure state-machine tests.
+ * The [AppDatabase] is a relaxed MockK mock — never exercised in group/option tests
+ * (no `save()` or `loadForEdit()` call), but required as non-null by the constructor.
  */
-@Suppress("UNCHECKED_CAST")
 private fun makeViewModel(scope: TestScope): NewProductViewModel {
+    val fakeDb       = mockk<AppDatabase>(relaxed = true)
     val menuRepo     = MenuRepository(FakeMenuItemDao())
     val categoryRepo = CategoryRepository(FakeCategoryDao())
-    val productRepo  = ProductRepository(FakeProductDao(), FakeCustomizationGroupDao(), FakeCustomizationOptionDao())
-    val fakeDb       = null as Any? as AppDatabase   // never called in these tests
+    val productRepo  = ProductRepository(FakeProductDao(), FakeCustomizationGroupDao(), FakeCustomizationOptionDao(), fakeDb)
 
     return NewProductViewModel(
         productRepository  = productRepo,

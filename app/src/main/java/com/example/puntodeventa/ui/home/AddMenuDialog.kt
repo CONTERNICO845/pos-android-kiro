@@ -45,21 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.puntodeventa.data.model.MenuItem
-import com.example.puntodeventa.ui.theme.ButtonCancel
-import com.example.puntodeventa.ui.theme.ButtonCancelText
-import com.example.puntodeventa.ui.theme.ButtonConfirm
-import com.example.puntodeventa.ui.theme.ButtonConfirmText
-import com.example.puntodeventa.ui.theme.ButtonDelete
-import com.example.puntodeventa.ui.theme.ButtonDeleteText
-import com.example.puntodeventa.ui.theme.EmojiPickerBorder
-import com.example.puntodeventa.ui.theme.EmojiPickerSelected
-import com.example.puntodeventa.ui.theme.InputBorder
-import com.example.puntodeventa.ui.theme.InputHint
-import com.example.puntodeventa.ui.theme.InputText
-import com.example.puntodeventa.ui.theme.ModalBodyText
-import com.example.puntodeventa.ui.theme.ModalSurface
-import com.example.puntodeventa.ui.theme.ModalTitleText
-import com.example.puntodeventa.ui.theme.SearchBarBorder
+import androidx.compose.material3.MaterialTheme
 
 /**
  * Modal dialog for creating or editing a menu item.
@@ -94,7 +80,7 @@ fun AddMenuDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape          = RoundedCornerShape(16.dp),
-            color          = ModalSurface,
+            color          = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
         ) {
             Column(
@@ -107,7 +93,7 @@ fun AddMenuDialog(
                     text       = "AGREGAR TU MENU",
                     fontSize   = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color      = ModalTitleText,
+                    color      = MaterialTheme.colorScheme.onSurface,
                     textAlign  = TextAlign.Center,
                     modifier   = Modifier.fillMaxWidth()
                 )
@@ -119,7 +105,7 @@ fun AddMenuDialog(
                     text      = "SELECCIONA TU FOTO DEL MENU",
                     fontSize  = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color     = ModalBodyText,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier  = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -130,7 +116,7 @@ fun AddMenuDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(192.dp)
-                        .border(1.dp, EmojiPickerBorder, RoundedCornerShape(8.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                         .padding(4.dp)
                 ) {
                     LazyVerticalGrid(
@@ -147,11 +133,11 @@ fun AddMenuDialog(
                                     .border(
                                         border = BorderStroke(
                                             width = if (isSelected) 2.dp else 1.dp,
-                                            color = if (isSelected) EmojiPickerSelected else EmojiPickerBorder
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                                         ),
                                         shape = RoundedCornerShape(8.dp)
                                     )
-                                    .background(ModalSurface)
+                                    .background(MaterialTheme.colorScheme.surface)
                                     .clickable { selectedEmoji = entry.emoji },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -168,21 +154,21 @@ fun AddMenuDialog(
                     value         = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder   = {
-                        Text(text = "BUSCAR EMOJI", color = InputHint, fontSize = 13.sp)
+                        Text(text = "BUSCAR EMOJI", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     },
                     leadingIcon   = {
                         Icon(
                             imageVector        = Icons.Default.Search,
                             contentDescription = "Buscar",
-                            tint               = SearchBarBorder
+                            tint               = MaterialTheme.colorScheme.primary
                         )
                     },
                     singleLine      = true,
                     colors          = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = SearchBarBorder,
-                        unfocusedBorderColor = SearchBarBorder,
-                        focusedTextColor     = InputText,
-                        unfocusedTextColor   = InputText,
+                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedTextColor     = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor   = MaterialTheme.colorScheme.onSurface,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     modifier        = Modifier.fillMaxWidth()
@@ -195,7 +181,7 @@ fun AddMenuDialog(
                     text       = "ESCRIBE EL NOMBRE DE TU MENU",
                     fontSize   = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = ModalBodyText
+                    color      = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(Modifier.height(6.dp))
@@ -207,16 +193,16 @@ fun AddMenuDialog(
                         showError = false
                     },
                     placeholder = {
-                        Text(text = "Tu Nombre Aqui", color = InputHint)
+                        Text(text = "Tu Nombre Aqui", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     },
                     singleLine  = true,
                     isError     = showError,
                     colors      = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = InputBorder,
-                        unfocusedBorderColor = InputBorder,
-                        focusedTextColor     = InputText,
-                        unfocusedTextColor   = InputText,
-                        errorBorderColor     = ButtonCancel,
+                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedTextColor     = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor   = MaterialTheme.colorScheme.onSurface,
+                        errorBorderColor     = MaterialTheme.colorScheme.error,
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -227,7 +213,7 @@ fun AddMenuDialog(
                             "Selecciona un emoji primero."
                         else
                             "El nombre no puede estar vacío.",
-                        color    = ButtonCancel,
+                        color    = MaterialTheme.colorScheme.error,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -241,8 +227,8 @@ fun AddMenuDialog(
                     Button(
                         onClick  = onDelete,
                         colors   = ButtonDefaults.buttonColors(
-                            containerColor = ButtonDelete,
-                            contentColor   = ButtonDeleteText
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor   = MaterialTheme.colorScheme.onError
                         ),
                         shape    = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -277,8 +263,8 @@ fun AddMenuDialog(
                             }
                         },
                         colors   = ButtonDefaults.buttonColors(
-                            containerColor = ButtonConfirm,
-                            contentColor   = ButtonConfirmText
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor   = MaterialTheme.colorScheme.onSecondary
                         ),
                         shape    = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)
@@ -294,8 +280,8 @@ fun AddMenuDialog(
                     Button(
                         onClick  = onDismiss,
                         colors   = ButtonDefaults.buttonColors(
-                            containerColor = ButtonCancel,
-                            contentColor   = ButtonCancelText
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor   = MaterialTheme.colorScheme.onError
                         ),
                         shape    = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)

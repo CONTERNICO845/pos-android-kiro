@@ -12,9 +12,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CategoryEntity::class,              // version 2 — new
         ProductEntity::class,               // version 2 — new
         CustomizationGroupEntity::class,    // version 2 — new
-        CustomizationOptionEntity::class    // version 2 — new
+        CustomizationOptionEntity::class,   // version 2 — new
+        OrderEntity::class,                 // version 3 — new
+        OrderItemEntity::class,             // version 3 — new
+        OrderItemCustomizationEntity::class // version 3 — new
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +30,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun customizationGroupDao(): CustomizationGroupDao
     abstract fun customizationOptionDao(): CustomizationOptionDao
+
+    // ── Version 3 accessors (new) ─────────────────────────────────────────────
+    abstract fun orderDao(): OrderDao
 
     companion object {
         @Volatile
@@ -47,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
                 if (current != null) {
                     current
                 } else {
+                    val seeder = DatabaseSeeder()
                     val db = Room.databaseBuilder(
                         context.applicationContext,
                         AppDatabase::class.java,
@@ -56,6 +63,12 @@ abstract class AppDatabase : RoomDatabase() {
                         .addCallback(foreignKeyCallback)   // enables CASCADE at runtime
                         .build()
                     INSTANCE = db
+                    // Seed after build: triggers onOpen (FK pragma) then seeds if empty.
+                    // runBlocking is safe here because we are on a background/init thread
+                    // and the DB is fully built before any DAO access.
+                    kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                        seeder.seedIfEmpty(db)
+                    }
                     db
                 }
             }

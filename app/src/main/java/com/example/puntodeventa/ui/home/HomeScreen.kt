@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -15,10 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.puntodeventa.ui.theme.BackgroundPrimary
 
 @Composable
 fun HomeScreen(
+    onNavigateToPOS: (String) -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -26,7 +27,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundPrimary),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopStart
     ) {
         LazyVerticalGrid(
@@ -41,6 +42,7 @@ fun HomeScreen(
             items(uiState.menuItems, key = { it.id }) { item ->
                 MenuItemCard(
                     item        = item,
+                    onClick     = { onNavigateToPOS(item.id) },
                     onEditClick = { viewModel.openEditDialog(it) }
                 )
             }
@@ -48,6 +50,7 @@ fun HomeScreen(
             // "+" card — always last
             item {
                 AddMenuCard(onClick = { viewModel.openDialog() })
+
             }
         }
     }

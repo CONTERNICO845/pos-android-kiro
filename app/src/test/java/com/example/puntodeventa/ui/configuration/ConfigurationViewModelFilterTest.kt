@@ -1,7 +1,7 @@
 package com.example.puntodeventa.ui.configuration
 
 import com.example.puntodeventa.data.model.Product
-import io.kotest.core.spec.style.PropSpec
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
@@ -9,7 +9,7 @@ import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.uuid
-import io.kotest.property.forAll
+import io.kotest.property.checkAll
 
 // ── Arbitraries ───────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ private fun referenceFilter(products: List<Product>, query: String): List<Produc
  * Property-based tests for the internal pure functions [applyFilter] and [clampQuery]
  * in ConfigurationViewModel.kt.
  */
-class ConfigurationViewModelFilterTest : PropSpec({
+class ConfigurationViewModelFilterTest : StringSpec({
 
     /**
      * PBT-01: Filter subset property
@@ -59,8 +59,8 @@ class ConfigurationViewModelFilterTest : PropSpec({
      *
      * **Validates: AC-04.2, Property 5**
      */
-    property("PBT-01: applyFilter output matches reference implementation") {
-        forAll(arbProductList, arbSearchQuery) { products, query ->
+    "PBT-01: applyFilter output matches reference implementation" {
+        checkAll(arbProductList, arbSearchQuery) { products, query ->
             applyFilter(products, query) == referenceFilter(products, query)
         }
     }
@@ -73,8 +73,8 @@ class ConfigurationViewModelFilterTest : PropSpec({
      *
      * **Validates: Property 5**
      */
-    property("PBT-02: applyFilter is idempotent — applying the same filter twice yields the same result") {
-        forAll(arbProductList, arbSearchQuery) { products, query ->
+    "PBT-02: applyFilter is idempotent — applying the same filter twice yields the same result" {
+        checkAll(arbProductList, arbSearchQuery) { products, query ->
             val once  = applyFilter(products, query)
             val twice = applyFilter(once, query)
             once == twice
@@ -88,8 +88,8 @@ class ConfigurationViewModelFilterTest : PropSpec({
      *
      * **Validates: AC-04.3**
      */
-    property("PBT-03: empty query returns the full product list") {
-        forAll(arbProductList) { products ->
+    "PBT-03: empty query returns the full product list" {
+        checkAll(arbProductList) { products ->
             applyFilter(products, "") == products
         }
     }
@@ -101,8 +101,8 @@ class ConfigurationViewModelFilterTest : PropSpec({
      *
      * **Validates: AC-04.2**
      */
-    property("PBT-07: clampQuery always returns a string of at most 100 characters") {
-        forAll(arbSearchQuery) { query ->
+    "PBT-07: clampQuery always returns a string of at most 100 characters" {
+        checkAll(arbSearchQuery) { query ->
             clampQuery(query).length <= 100
         }
     }
@@ -114,8 +114,8 @@ class ConfigurationViewModelFilterTest : PropSpec({
      *
      * **Validates: filteredProducts ⊆ products invariant**
      */
-    property("PBT-08: every item in applyFilter result is present in the original product list") {
-        forAll(arbProductList, arbSearchQuery) { products, query ->
+    "PBT-08: every item in applyFilter result is present in the original product list" {
+        checkAll(arbProductList, arbSearchQuery) { products, query ->
             val filtered = applyFilter(products, query)
             filtered.all { it in products }
         }

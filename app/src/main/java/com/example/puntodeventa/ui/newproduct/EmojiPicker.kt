@@ -23,10 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.puntodeventa.ui.theme.InputBorder
-import com.example.puntodeventa.ui.theme.InputText
-import com.example.puntodeventa.ui.theme.ModalBodyText
-import com.example.puntodeventa.ui.theme.ModalSurface
+import androidx.compose.material3.MaterialTheme
 
 // ── Emoji catalogue — at least 50 food & object emojis ───────────────────────
 val EMOJI_LIST: List<String> = listOf(
@@ -72,9 +69,9 @@ fun EmojiPickerButton(
         OutlinedButton(
             onClick = onToggle,
             colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = InputText
+                contentColor = MaterialTheme.colorScheme.onSurface
             ),
-            border = androidx.compose.foundation.BorderStroke(1.dp, InputBorder)
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -91,7 +88,7 @@ fun EmojiPickerButton(
                                   else Icons.Default.KeyboardArrowDown,
                     contentDescription = if (expanded) "Cerrar selector de emoji"
                                          else "Abrir selector de emoji",
-                    tint = InputBorder
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -99,7 +96,7 @@ fun EmojiPickerButton(
         // ── Animated emoji grid ────────────────────────────────────────────
         AnimatedVisibility(visible = expanded) {
             Surface(
-                color = ModalSurface,
+                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -119,7 +116,7 @@ fun EmojiPickerButton(
                         Text(
                             text = item,
                             fontSize = 24.sp,
-                            color = ModalBodyText,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
                                 .clickable { onEmojiSelected(item) }
                                 .padding(6.dp)

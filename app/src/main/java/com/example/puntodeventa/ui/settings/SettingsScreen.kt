@@ -9,20 +9,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.example.puntodeventa.ui.theme.BackgroundPrimary
-import com.example.puntodeventa.ui.theme.CardText
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun SettingsScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundPrimary),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text       = "CONFIGURACIÓN",
-            color      = CardText,
+            color      = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize   = 24.sp
         )

@@ -24,11 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.puntodeventa.data.model.Product
-import com.example.puntodeventa.ui.theme.ButtonCancel
-import com.example.puntodeventa.ui.theme.ButtonConfirm
-import com.example.puntodeventa.ui.theme.ButtonDelete
-import com.example.puntodeventa.ui.theme.CardBackground
-import com.example.puntodeventa.ui.theme.CardText
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun ProductCard(
@@ -44,7 +40,7 @@ fun ProductCard(
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
@@ -66,13 +62,13 @@ fun ProductCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = product.name,
-                    color = CardText,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
                     text = formatPrice(product.basePrice),
-                    color = CardText,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontSize = 14.sp
                 )
             }
@@ -82,10 +78,10 @@ fun ProductCard(
                 checked = product.isActive,
                 onCheckedChange = { onToggleActive(product) },
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = CardText,
-                    checkedTrackColor = ButtonConfirm,
-                    uncheckedThumbColor = CardText,
-                    uncheckedTrackColor = ButtonCancel
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    checkedTrackColor = MaterialTheme.colorScheme.secondary,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.error
                 )
             )
 
@@ -95,7 +91,7 @@ fun ProductCard(
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Opciones de ${product.name}",
-                        tint = CardText
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
                 ProductActionMenu(
@@ -122,7 +118,7 @@ private fun ProductActionMenu(
         DropdownMenuItem(text = { Text("Editar") }, onClick = { onEditar(); onDismiss() })
         DropdownMenuItem(text = { Text("Duplicar") }, onClick = { onDuplicar(); onDismiss() })
         DropdownMenuItem(
-            text = { Text("Eliminar", color = ButtonDelete) },
+            text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
             onClick = { onEliminar(); onDismiss() }
         )
     }

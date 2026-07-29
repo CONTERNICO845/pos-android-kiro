@@ -17,7 +17,7 @@ follows the Clean Architecture patterns already in use by the existing
     - Add `companion object` with `fromValue(raw: String): SelectionType?` using `entries.associateBy { it.value }`
     - _Requirements: 3.3, 9.8_
 
-  - [ ]* 1.2 Write unit tests for `SelectionType.fromValue`
+  - [x]* 1.2 Write unit tests for `SelectionType.fromValue`
     - Test every valid value returns the correct enum constant
     - Test any unknown string (including empty string, null-coerced value, whitespace) returns `null`
     - _Requirements: 3.3_
@@ -109,13 +109,13 @@ follows the Clean Architecture patterns already in use by the existing
     - Private mapping helpers: `CategoryEntity.toDomain()` and `Category.toEntity()` (field-by-field, lossless)
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-  - [ ]* 8.2 Write property test for `CategoryRepository` — Property 2: Category mapping round-trip
+  - [x]* 8.2 Write property test for `CategoryRepository` — Property 2: Category mapping round-trip
     - **Property 2: Category mapping round-trip**
     - Use Kotest `checkAll(100, Arb.string(1..36), Arb.string(1..120), Arb.string(1..36))` to generate arbitrary `(id, name, associatedMenuId)` triples
     - Assert `Category(id, name, menuId).toEntity().toDomain() == Category(id, name, menuId)`
     - **Validates: Requirements 7.4, 9.2**
 
-  - [ ]* 8.3 Write unit tests for `CategoryRepository` — query delegation and no-op delete
+  - [x]* 8.3 Write unit tests for `CategoryRepository` — query delegation and no-op delete
     - Use a fake `CategoryDao` stub (no Room needed)
     - Test `getCategoriesByMenu` maps `CategoryEntity` list → `Category` list correctly
     - Test `deleteById` with non-existent id performs no-op (0 exceptions, 0 rows affected)
@@ -133,25 +133,25 @@ follows the Clean Architecture patterns already in use by the existing
     - Private mapping helpers: `ProductEntity.toDomain()` and `Product.toEntity()` (field-by-field, lossless)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 3.3, 4.3_
 
-  - [ ]* 9.2 Write property test for `ProductRepository` — Property 1: Product mapping round-trip
+  - [x]* 9.2 Write property test for `ProductRepository` — Property 1: Product mapping round-trip
     - **Property 1: Product mapping round-trip**
     - Use `checkAll(100, Arb.string(1..36), Arb.string(1..8), Arb.string(1..120), Arb.string(1..500), Arb.double(0.0..9999.99), Arb.boolean(), Arb.string(1..36))`
     - Assert `Product(id, emoji, name, desc, price, active, catId).toEntity().toDomain() == original`
     - **Validates: Requirements 6.6, 9.1**
 
-  - [ ]* 9.3 Write property test for `ProductRepository` — Property 8: Invalid `selectionType` is rejected
+  - [x]* 9.3 Write property test for `ProductRepository` — Property 8: Invalid `selectionType` is rejected
     - **Property 8: Invalid selectionType is rejected**
     - Use `checkAll(100, Arb.string())` with `assume(raw !in setOf("multiple_checkboxes", "single_option"))`
     - Assert `insertGroup` throws `IllegalArgumentException` and does NOT call `groupDao.insertInternal`
     - **Validates: Requirements 3.3, 9.8**
 
-  - [ ]* 9.4 Write property test for `ProductRepository` — Property 9: Negative `extraPrice` is rejected
+  - [x]* 9.4 Write property test for `ProductRepository` — Property 9: Negative `extraPrice` is rejected
     - **Property 9: Negative extraPrice is rejected**
     - Use `checkAll(100, Arb.double(Double.MIN_VALUE..-0.001))`
     - Assert `insertOption` throws `IllegalArgumentException` and does NOT call `optionDao.insert`
     - **Validates: Requirements 4.3**
 
-  - [ ]* 9.5 Write unit tests for `ProductRepository` — FK propagation and active filter
+  - [x]* 9.5 Write unit tests for `ProductRepository` — FK propagation and active filter
     - Use fake DAO stubs
     - Test `insert(product)` where `categoryId` references no row propagates `SQLiteConstraintException` without swallowing
     - Test `getActiveProductsByCategory` with mixed active/inactive entities returns only active ones

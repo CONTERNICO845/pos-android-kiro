@@ -29,7 +29,7 @@ Phase 1 data layer. The implementation proceeds in four layers: pure utility fun
     - `internal fun clampQuery(query: String): String` — returns `query.take(100)`
     - _Requirements: AC-04.2, AC-04.3, AC-06.3_
 
-  - [ ]* 2.2 Write property tests for `applyFilter` and `clampQuery` (PBT-01 through PBT-03, PBT-07, PBT-08)
+  - [x]* 2.2 Write property tests for `applyFilter` and `clampQuery` (PBT-01 through PBT-03, PBT-07, PBT-08)
     - Create `src/test/.../ConfigurationViewModelFilterTest.kt` as a Kotest `PropSpec`
     - **PBT-01: Filter subset property** — `forAll(arbProductList, arbSearchQuery)` verifies
       `applyFilter` output matches reference implementation
@@ -50,7 +50,7 @@ Phase 1 data layer. The implementation proceeds in four layers: pure utility fun
     - `"$" + "%.2f".format(price)` — half-up rounding via `String.format`
     - _Requirements: AC-06.3_
 
-  - [ ]* 2.4 Write property test for `formatPrice` (PBT-04)
+  - [x]* 2.4 Write property test for `formatPrice` (PBT-04)
     - Create `src/test/.../ProductCardFormatPriceTest.kt`
     - **PBT-04: Price format always starts with "$" and has exactly two decimal places**
     - `forAll(Arb.double(min = 0.0, max = 1_000_000.0))` verifies `startsWith("$")` and two
@@ -90,7 +90,7 @@ Phase 1 data layer. The implementation proceeds in four layers: pure utility fun
       `productRepository`, `menuId`
     - _Requirements: AC-09.5_
 
-  - [ ]* 3.4 Write unit tests for `ConfigurationViewModel`
+  - [x]* 3.4 Write unit tests for `ConfigurationViewModel`
     - Create `src/test/.../ConfigurationViewModelTest.kt` using `runTest` + `TestScope`
     - Implement `FakeCategoryRepository` and `FakeProductRepository` as described in the design
     - Cover all cases from the design's "Key unit test cases" table:
@@ -103,7 +103,7 @@ Phase 1 data layer. The implementation proceeds in four layers: pure utility fun
     - _Requirements: AC-02.5, AC-02.8, AC-04.2, AC-04.3, AC-04.4, AC-07.4, AC-08.5, AC-08.6,
       AC-08.7, AC-08.8, AC-08.9, AC-09.6_
 
-  - [ ]* 3.5 Write remaining property tests for ViewModel-level properties (PBT-05, PBT-06)
+  - [x]* 3.5 Write remaining property tests for ViewModel-level properties (PBT-05, PBT-06)
     - Add to `ConfigurationViewModelFilterTest.kt` or a new `ConfigurationViewModelPbtTest.kt`
     - **PBT-05: Toggle flip is its own inverse** — `forAll(arbProduct)` verifies two consecutive
       toggles restore original `isActive`

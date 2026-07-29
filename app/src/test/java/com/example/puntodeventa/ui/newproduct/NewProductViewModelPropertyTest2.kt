@@ -20,6 +20,7 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.string
 import io.kotest.property.forAll
+import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -49,12 +50,14 @@ private class FakeProductDao2 : ProductDao {
 private class FakeCustomizationGroupDao2 : CustomizationGroupDao {
     override suspend fun insertInternal(group: CustomizationGroupEntity) {}
     override fun getGroupsByProduct(productId: String): Flow<List<CustomizationGroupEntity>> = flowOf(emptyList())
+    override suspend fun getGroupsByProductOnce(productId: String): List<CustomizationGroupEntity> = emptyList()
     override suspend fun deleteById(id: String) {}
 }
 
 private class FakeCustomizationOptionDao2 : CustomizationOptionDao {
     override suspend fun insert(option: CustomizationOptionEntity) {}
     override fun getOptionsByGroup(groupId: String): Flow<List<CustomizationOptionEntity>> = flowOf(emptyList())
+    override suspend fun getOptionsByGroupOnce(groupId: String): List<CustomizationOptionEntity> = emptyList()
     override suspend fun deleteById(id: String) {}
 }
 
@@ -62,14 +65,13 @@ private class FakeCustomizationOptionDao2 : CustomizationOptionDao {
 
 /**
  * Creates a [NewProductViewModel] wired to fake repositories.
- * [AppDatabase] is null because these tests never call [NewProductViewModel.save].
+ * [AppDatabase] is a relaxed MockK mock because these tests never call [NewProductViewModel.save].
  */
-@Suppress("UNCHECKED_CAST")
 private fun buildViewModel2(): NewProductViewModel {
+    val fakeDb       = mockk<AppDatabase>(relaxed = true)
     val menuRepo     = MenuRepository(FakeMenuItemDao2())
     val categoryRepo = CategoryRepository(FakeCategoryDao2())
-    val productRepo  = ProductRepository(FakeProductDao2(), FakeCustomizationGroupDao2(), FakeCustomizationOptionDao2())
-    val fakeDb       = null as Any? as AppDatabase   // never called in these tests
+    val productRepo  = ProductRepository(FakeProductDao2(), FakeCustomizationGroupDao2(), FakeCustomizationOptionDao2(), fakeDb)
     return NewProductViewModel(
         productRepository  = productRepo,
         categoryRepository = categoryRepo,
@@ -129,6 +131,61 @@ class NewProductViewModelPropertyTest2 : StringSpec({
 
                 val after = vm.uiState.value.groups.map { it.draftId }
                 before == after
+            }
+        }
+    }
+
+    /**
+     * Property 6: updateOptionName preserves all option draftIds within group
+     *
+     * Calling `updateOptionName(g, o, name)` leaves every OptionDraft.draftId in the group unchanged.
+     *
+     * **Validates: Requirements 11.6, 10.5**
+     */
+    "Property 6 — updateOptionName preserves all OptionDraft draftIds within group (Validates: Requirements 11.6, 10.5)" {
+        runTest(UnconfinedTestDispatcher()) {
+            val optionCount = 5
+            forAll(
+                PropTestConfig(iterations = 20),
+                Arb.int(0 until optionCount),  // targetOptionIndex
+                Arb.string(0..120)             // newName (arbitrary, may be blank)
+            ) { targetOptionIndex, newName ->
+                val vm = buildViewModel2()
+                vm.addGroup()  // groups[0] starts with 1 option
+
+                // Add more options so we have optionCount total
+                repeat(optionCount - 1) { vm.addOption(0) }
+
+                val before = vm.uiState.value.groups[0].options.map { it.draftId }
+
+                vm.updateOptionName(0, targetOptionIndex, newName)
+
+                val after = vm.uiState.value.groups[0].options.map { it.draftId }
+                before == after
+            }
+        }
+    }
+
+    /**
+     * Property 7: OptionDraft draftId uniqueness within a group
+     *
+     * After any sequence of `addOption(groupIndex)` calls, all draftId values within
+     * that group are pairwise distinct.
+     *
+     * **Validates: Requirements 11.7, 10.3**
+     */
+    "Property 7 — OptionDraft draftId uniqueness within a group (Validates: Requirements 11.7, 10.3)" {
+        runTest(UnconfinedTestDispatcher()) {
+            forAll(PropTestConfig(iterations = 20), Arb.int(0..10)) { m ->
+                val vm = buildViewModel2()
+                vm.addGroup()  // groups[0] starts with 1 option
+
+                repeat(m) { vm.addOption(0) }  // add M more options
+
+                val options = vm.uiState.value.groups[0].options
+                val draftIds = options.map { it.draftId }
+                val uniqueIds = draftIds.toSet()
+                uniqueIds.size == draftIds.size
             }
         }
     }
