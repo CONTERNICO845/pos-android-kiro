@@ -81,8 +81,10 @@ Incluye gestión de menús, catálogo de productos con personalizaciones, carrit
 - Specs técnicas de la POS-8360 visibles en panel de status
 
 ### Motor de Temas
-- 4 temas dinámicos que se aplican en tiempo real sin reiniciar
+- **9 temas dinámicos** (6 claros + 3 oscuros) que se aplican en tiempo real sin reiniciar
 - Persistencia del tema seleccionado en DataStore
+- Cuadrícula adaptable que escala las columnas al ancho de pantalla
+- Contraste WCAG 2.1 ≥ 4.5:1 verificado en todos los pares texto/fondo
 - Todos los componentes usan `MaterialTheme.colorScheme`
 
 ---
@@ -222,14 +224,28 @@ Usuario presiona "Confirmar Pago"
 
 ## 🎨 Temas Disponibles
 
-| Tema | Nombre en UI | Descripción |
-|------|-------------|-------------|
-| `DEFAULT_GREEN` | Verde por Defecto | Tonos verdes naturales, tema principal |
-| `DARK_NEON` | Neón Oscuro | Fondo oscuro con acentos neón |
-| `OCEAN_BLUE` | Océano Azul | Azules profesionales sobre fondo blanco |
-| `SUNSET_ORANGE` | Atardecer Naranja | Naranjas cálidos con acentos dorados |
+El motor de temas ofrece **9 esquemas de color** (6 claros + 3 oscuros), seleccionables en tiempo real sin reiniciar la app. La preferencia se persiste en **DataStore Preferences**.
 
-El tema se persiste en **DataStore Preferences** y se aplica en tiempo real sin reiniciar la app.
+### Temas originales
+
+| Tema | Nombre en UI | Modo | Primary | Descripción |
+|------|-------------|------|---------|-------------|
+| `DEFAULT_GREEN` | Verde por Defecto | Claro | `#4A8C1C` | Tonos verdes naturales, tema principal |
+| `DARK_NEON` | Neón Oscuro | Oscuro | `#39FF14` | Fondo oscuro (#121212) con acentos neón verde y cian |
+| `OCEAN_BLUE` | Océano Azul | Claro | `#1565C0` | Azules profesionales sobre fondo blanco |
+| `SUNSET_ORANGE` | Atardecer Naranja | Claro | `#E65100` | Naranjas cálidos con acentos dorados |
+
+### Temas premium (expansión)
+
+| Tema | Nombre en UI | Modo | Primary | Descripción |
+|------|-------------|------|---------|-------------|
+| `MIDNIGHT_SLATE` | Pizarra Medianoche | Oscuro | `#8AB4FF` | Pizarra azulada con índigo suave y acento teal. Sobrio y tecnológico. |
+| `CHARCOAL_AMBER` | Carbón Ámbar | Oscuro | `#FFCA6B` | Carbón cálido con ámbar de lujo y acento salvia. Acogedor para uso nocturno. |
+| `ROSE_QUARTZ` | Cuarzo Rosa | Claro | `#B0235A` | Blush suave con rosa boutique y acento bronce. Elegante y cálido. |
+| `EMERALD_TEAL` | Esmeralda | Claro | `#00695C` | Menta fría con esmeralda profundo y acento azul pizarra. Limpio y profesional. |
+| `ROYAL_PLUM` | Ciruela Real | Claro | `#6A1B9A` | Lila aireado con ciruela regia y acento rosa. Rico y distintivo. |
+
+> Los hex completos de cada color role (primary, secondary, tertiary, containers, surfaces, error, outlines) están documentados en `.kiro/specs/18_theme_engine/design.md`.
 
 ---
 
