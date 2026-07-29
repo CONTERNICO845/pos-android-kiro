@@ -74,9 +74,10 @@ class TicketHistoryViewModel(
     }
 
     fun onReprintTicket(order: OrderEntity) {
-        val ipAddress = printerPreferencesRepository.getIpAddress()
-        if (ipAddress.isBlank()) {
-            Log.w(TAG, "Reprint requested but printer IP is empty")
+        val activePrinters = printerPreferencesRepository.getPrinters().filter { it.isActive }
+        if (activePrinters.isEmpty()) {
+            Log.w(TAG, "Reprint requested but no active printers are configured")
+            _uiState.update { it.copy(errorMessage = "No hay impresoras activas configuradas") }
             return
         }
         val ticketText = order.clientTicketText
@@ -88,7 +89,15 @@ class TicketHistoryViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(reprintingOrderId = order.id) }
             try {
-                EscPosPrinterLan.printTicket(ipAddress, ticketText)
+                activePrinters.forEach { printer ->
+                    EscPosPrinterLan.printTicket(
+                        ipAddress = printer.ipAddress,
+                        ticketText = ticketText,
+                        port = printer.port,
+                        paperSize = printer.paperSize,
+                        autoCut = printer.autoCut
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

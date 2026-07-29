@@ -78,6 +78,8 @@ class PosViewModel(
     private val _confirmButtonText = MutableStateFlow("Confirmar Pago")
     private val _editingCartItem = MutableStateFlow<CartItem?>(null)
     val editingCartItem: StateFlow<CartItem?> = _editingCartItem
+    // Tracks successful destinations during manual retries so already printed tickets are not duplicated.
+    private val printedPrinterIds = mutableSetOf<String>()
 
     // ── Search state ──────────────────────────────────────────────────────────
     private val _searchQuery = MutableStateFlow("")
@@ -407,6 +409,7 @@ class PosViewModel(
         if (_cartItems.value.isNotEmpty()) {
             _isCheckoutVisible.value = true
             _checkoutState.value = CheckoutState() // fresh state each time
+            printedPrinterIds.clear()
         }
     }
 
@@ -511,12 +514,15 @@ class PosViewModel(
             _checkoutState.value = _checkoutState.value.copy(isPrinting = true)
             _confirmButtonText.value = "Imprimiendo Ticket"
 
-            // Step 2: Get printer IP
-            val ipAddress = printerPreferencesRepository?.getIpAddress() ?: ""
+            // Step 2: Resolve the active printer destinations for this attempt.
+            val activePrinters = printerPreferencesRepository
+                ?.getPrinters()
+                .orEmpty()
+                .filter { it.isActive }
 
-            // Step 3: Validate IP
-            if (ipAddress.isEmpty()) {
-                _error.value = "No se ha configurado la IP de la impresora"
+            // Step 3: At least one active printer is required before persisting an order.
+            if (activePrinters.isEmpty()) {
+                _error.value = "No hay impresoras activas configuradas"
                 _checkoutState.value = _checkoutState.value.copy(isPrinting = false)
                 _confirmButtonText.value = "Confirmar Pago"
                 return@launch
@@ -583,15 +589,21 @@ class PosViewModel(
                 items = ticketLineItems
             )
 
-            // Step 5: Print client ticket (normal text) then internal ticket (double height items)
+            // Step 5: Send the complete order only to active destinations. A retry skips
+            // printers that already succeeded, avoiding duplicate tickets after partial failure.
             try {
-                EscPosPrinterLan.printTicket(ipAddress, clientTicketText)
-                EscPosPrinterLan.printInternalTicketWithDoubleHeight(
-                    ipAddress,
-                    segments.header,
-                    segments.items,
-                    segments.footer
-                )
+                activePrinters
+                    .filterNot { it.id in printedPrinterIds }
+                    .forEach { printer ->
+                        EscPosPrinterLan.printOrder(
+                            printer = printer,
+                            clientTicketText = clientTicketText,
+                            internalHeader = segments.header,
+                            internalItems = segments.items,
+                            internalFooter = segments.footer
+                        )
+                        printedPrinterIds += printer.id
+                    }
             } catch (e: Exception) {
                 // Print failed
                 val currentState = _checkoutState.value
@@ -674,6 +686,7 @@ class PosViewModel(
      * (Req 13.1-13.5)
      */
     private fun resetPosState() {
+        printedPrinterIds.clear()
         _cartItems.value = emptyList()
         _checkoutState.value = CheckoutState()
         _isCheckoutVisible.value = false
