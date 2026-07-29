@@ -17,4 +17,7 @@ interface CustomizationGroupDao {
 
     @Query("DELETE FROM customization_groups WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM customization_groups")
+    suspend fun deleteAll()
 }

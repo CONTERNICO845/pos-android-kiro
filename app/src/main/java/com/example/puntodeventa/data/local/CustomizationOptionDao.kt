@@ -17,4 +17,7 @@ interface CustomizationOptionDao {
 
     @Query("DELETE FROM customization_options WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM customization_options")
+    suspend fun deleteAll()
 }

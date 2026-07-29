@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.puntodeventa.data.local.AppDatabase
 import com.example.puntodeventa.data.repository.CategoryRepository
+import com.example.puntodeventa.data.repository.CatalogJsonRepository
 import com.example.puntodeventa.data.repository.MenuRepository
 import com.example.puntodeventa.data.repository.OrderRepository
 import com.example.puntodeventa.data.repository.PrinterPreferencesRepository
@@ -62,6 +63,14 @@ class MainActivity : ComponentActivity() {
         val printerPrefsRepo = PrinterPreferencesRepository(this)
         val orderRepo = OrderRepository(db.orderDao(), db)
         val themePrefsRepo = ThemePreferencesRepository(themeDataStore)
+        val catalogJsonRepo = CatalogJsonRepository(
+            database   = db,
+            menuItemDao = db.menuItemDao(),
+            categoryDao = db.categoryDao(),
+            productDao  = db.productDao(),
+            groupDao    = db.customizationGroupDao(),
+            optionDao   = db.customizationOptionDao()
+        )
 
         setContent {
             val themeViewModel: ThemeViewModel = viewModel(
@@ -140,6 +149,7 @@ class MainActivity : ComponentActivity() {
                                 factory = ConfigurationViewModel.Factory(
                                     categoryRepository = categoryRepo,
                                     productRepository  = productRepo,
+                                    catalogJsonRepository = catalogJsonRepo,
                                     menuId             = activeMenuId
                                 )
                             ),

@@ -1,7 +1,7 @@
 # AGENT.md — PuntoDeVenta
 
 > **Mapa de contexto maestro.** Este archivo describe el estado **real** del proyecto (no el planificado).
-> Última actualización: 2026-07-28 · Rama: `master` · Specs indexadas: 20 · Specs completas: 20/20
+> Última actualización: 2026-07-29 · Rama: `master` · Specs indexadas: 21 · Specs completas: 21/21
 
 ---
 
@@ -22,7 +22,8 @@ Flujo funcional completo hoy:
 5. **Persistencia** — la orden se guarda en Room con el texto exacto de ambos tickets.
 6. **Consulta** — pantallas de Estadísticas (ingresos, órdenes, ticket promedio, top productos) e
    Historial de Tickets con reimpresión.
-7. **Configuración** — CRUD de categorías/productos, configuración de impresora y selector de tema.
+7. **Configuración** — CRUD de categorías/productos, **importar/exportar/modificar catálogo vía JSON**,
+   configuración de impresora y selector de tema.
 
 ### Stack tecnológico (verificado en `app/build.gradle.kts` y `gradle/libs.versions.toml`)
 
@@ -33,6 +34,7 @@ Flujo funcional completo hoy:
 | Build | Gradle KTS + **version catalog** (`libs.*`), AGP `9.2.1`, KSP `2.2.10-2.0.2` |
 | SDK | `minSdk 24` · `compileSdk 37` · `targetSdk 37` |
 | Persistencia | Room `2.7.1` (KSP) + DataStore Preferences `1.1.4` + SharedPreferences |
+| Serialización | kotlinx-serialization-json `1.8.1` (JSON de catálogo) |
 | Lifecycle | lifecycle `2.11.0` (viewmodel-compose, runtime-compose), activity-compose `1.13.0` |
 | Arquitectura | MVVM + UDF, `StateFlow` / `collectAsStateWithLifecycle()` |
 | DI | **Manual** en `MainActivity` (sin Hilt ni Koin) |
@@ -53,10 +55,11 @@ app/src/main/java/com/example/puntodeventa/
 ├── data/
 │   ├── local/                   # Room: AppDatabase, DatabaseSeeder, SeedCallback(muerto),
 │   │                            #       SelectionType, 8 *Entity, 6 *Dao
+│   ├── json/                    # DTOs @Serializable para import/export de catálogo JSON
 │   ├── model/                   # Modelos de dominio/proyección: MenuItem, Category, Product,
 │   │                            #       ProductSaleSummary
 │   ├── printer/                 # EscPosPrinterLan.kt (object, único archivo)
-│   └── repository/              # Menu, Category, Product, Order,
+│   └── repository/              # Menu, Category, Product, Order, CatalogJson,
 │                                #       PrinterPreferences (SharedPreferences),
 │                                #       ThemePreferences (DataStore)
 └── ui/
@@ -190,6 +193,7 @@ renumerar, mover ni borrar specs.**
 | 16 | `16_sprint_correcciones` | **37/37 ✅** | Sprint UX de tres frentes: `MenuFilterBar` + búsqueda en el POS, divisor de orden con tijeras (`isDivider`) e impresión de línea separadora con doble altura, y rediseño del checkout estilo "calculadora/asistente" en tema claro. |
 | 17 | `17_ux_polish_sprint` | **27/27 ✅** | Pulido UX: navegación directa Home → POS aplicando el `menuId` tocado, lógica anti-spam del botón de tijeras, limpieza del `CheckoutPanel` y estado visual "glow" en los botones de completar orden. |
 | 18 | `18_theme_engine` | **25/25 ✅** | Motor de temas dinámico: enum `AppTheme` de 4 temas, persistencia en Preferences DataStore con fallback a `DEFAULT_GREEN`, `ThemeViewModel` reactivo, `ThemeSelectorScreen` en cuadrícula y migración completa de todos los componentes a `MaterialTheme.colorScheme`. Sin reinicio de app. |
+| 19 | `19_json_management` | **10/10 ✅** | Gestión de catálogo vía JSON: exportar a archivo (SAF `CreateDocument`), importar desde archivo (SAF `OpenDocument` con validación y replace-all transaccional), y editor JSON in-app con `TextField` monospace. DTOs con `kotlinx.serialization`, `CatalogJsonRepository` para la lógica y diálogos de confirmación. |
 
 ### Specs con nombre (previas a la numeración)
 
@@ -317,3 +321,12 @@ Contexto para no "arreglar" cosas que son decisiones conscientes, y para saber d
 | 11 | Tests inconsistentes | `PrinterConfigViewModelTest` está **duplicado** en `test/` y `androidTest/`; `androidTest/assets/printer_sources/` contiene **copias de fuentes de producción** que se desincronizarán; hay property tests instrumentados que en realidad son puros. |
 | 12 | Build | `compileSdk`/`targetSdk` 37 (preview) con `minSdk 24`; release sin minify ni firma; `kotlinx-coroutines-core` no se declara (llega transitivamente). |
 | 13 | `OrderEntity.status` | Es un `String` libre; los valores válidos (`COMPLETED`, `CANCELLED`, `REFUNDED`) solo están documentados en comentarios, sin enum ni TypeConverter. |
+
+---
+
+## 6. Business Rules / Contextual UI
+
+| # | Regla | Detalle |
+|---|---|---|
+| 1 | Botón TOTAL con comportamiento dual | El botón TOTAL (en `CartPanel`) tiene doble función: en la vista de catálogo (checkout oculto), abre el panel de checkout (`showCheckout()`); dentro del panel de checkout, si las condiciones de pago se cumplen (`isCompletarOrdenEnabled == true`), funciona como atajo para completar la orden (`showConfirmationModal()`). |
+| 2 | Nombre de cliente permite espacios | El campo "Nombre del cliente" en el `CheckoutPanel` acepta espacios internos (para apellidos). La validación de "no vacío" se hace con `.trim().isEmpty()` solo al evaluar `isCompletarOrdenEnabled`, no al almacenar el valor. |

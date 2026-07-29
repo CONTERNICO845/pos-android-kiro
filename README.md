@@ -70,6 +70,9 @@ Incluye gestión de menús, catálogo de productos con personalizaciones, carrit
 - Toggle activo/inactivo por producto
 - Grupos de personalización con N opciones (Single / Multi selección)
 - Creación en modal bottom sheet con transacción atómica
+- **Exportar catálogo a JSON** — guarda todo el catálogo (menús, categorías, productos, personalizaciones) en un archivo `.json` via Storage Access Framework
+- **Importar catálogo desde JSON** — reemplaza todo el catálogo actual desde un archivo `.json` con validación completa y transacción atómica
+- **Editor JSON in-app** — visualiza y edita el catálogo como JSON formateado directamente en la app
 
 ### Configuración de Impresora
 - Layout dos columnas: Panel de Control + Panel de Status
@@ -135,6 +138,7 @@ Navegación mediante `NavigationRail` lateral persistente (7 destinos).
 | UI | Jetpack Compose + Material 3 | BOM 2026.02.01 |
 | Build | Gradle KTS + Version Catalog | AGP 9.2.1 |
 | Persistencia | Room (KSP) | 2.7.1 |
+| Serialización | kotlinx-serialization-json | 1.8.1 |
 | Preferencias | DataStore Preferences | 1.1.4 |
 | Lifecycle | ViewModel Compose + Runtime Compose | 2.11.0 |
 | SDK mínimo | Android | API 24 (Android 7.0) |
@@ -151,9 +155,10 @@ app/src/main/java/com/example/puntodeventa/
 ├── MainActivity.kt                 # Single Activity: DI manual + navegación
 ├── data/
 │   ├── local/                      # Room: AppDatabase, Entities, DAOs, Seeder
+│   ├── json/                       # DTOs @Serializable para import/export JSON
 │   ├── model/                      # Modelos de dominio: MenuItem, Category, Product
 │   ├── printer/                    # EscPosPrinterLan (TCP ESC/POS)
-│   └── repository/                 # Menu, Category, Product, Order, Printer, Theme
+│   └── repository/                 # Menu, Category, Product, Order, CatalogJson, Printer, Theme
 └── ui/
     ├── navigation/                 # NavDestination (sealed), AppNavRail
     ├── theme/                      # AppTheme, ThemeColors, ThemeViewModel, Selector
@@ -252,6 +257,36 @@ La app incluye un `DatabaseSeeder` que pobla datos de ejemplo al primer inicio:
 - 1 menú por defecto con categorías y productos
 - IDs deterministas con `UUID.nameUUIDFromBytes`
 - Ejecutado en transacción atómica antes de exponer la DB
+
+### Gestión de Catálogo vía JSON
+
+La pantalla de Configuración permite gestionar el catálogo completo mediante JSON:
+
+**Exportar** — Serializa toda la jerarquía (MenuItems → Categories → Products → CustomizationGroups → Options) a un archivo `.json` con esquema anidado. Usa Android Storage Access Framework para que el usuario elija la ubicación de guardado.
+
+**Importar** — Lee un archivo `.json`, valida el esquema (version, IDs, tipos, precios), muestra confirmación y ejecuta un replace-all transaccional: borra todo el catálogo actual e inserta el nuevo en una sola transacción Room.
+
+**Editor in-app** — Muestra el catálogo actual como JSON formateado en un TextField monospace editable, permitiendo modificaciones directas con la misma validación y transacción del import.
+
+Esquema JSON:
+```json
+{
+  "version": 1,
+  "exportedAt": "ISO-8601",
+  "catalog": {
+    "menuItems": [{ "id", "emoji", "name", "categories": [
+      { "id", "name", "products": [
+        { "id", "emoji", "name", "description", "basePrice", "isActive",
+          "customizationGroups": [
+            { "id", "groupName", "selectionType", "options": [
+              { "id", "optionName", "extraPrice" }
+            ]}
+          ]}
+      ]}
+    ]}]
+  }
+}
+```
 
 ---
 

@@ -12,9 +12,15 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE categoryId = :categoryId ORDER BY name COLLATE NOCASE ASC, id ASC")
     fun getProductsByCategory(categoryId: String): Flow<List<ProductEntity>>
 
+    @Query("SELECT * FROM products WHERE categoryId = :categoryId")
+    suspend fun getProductsByCategoryOnce(categoryId: String): List<ProductEntity>
+
     @Query("SELECT * FROM products WHERE categoryId = :categoryId AND isActive = 1")
     fun getActiveProductsByCategory(categoryId: String): Flow<List<ProductEntity>>
 
     @Query("DELETE FROM products WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM products")
+    suspend fun deleteAll()
 }

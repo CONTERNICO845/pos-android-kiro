@@ -1,6 +1,8 @@
 package com.example.puntodeventa.ui.configuration
 
-import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -31,13 +35,17 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +55,9 @@ import com.example.puntodeventa.data.model.Product
 import com.example.puntodeventa.ui.newproduct.NewProductModal
 import com.example.puntodeventa.ui.newproduct.NewProductViewModel
 import androidx.compose.material3.MaterialTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ConfigurationScreen(
@@ -54,8 +65,36 @@ fun ConfigurationScreen(
     newProductViewModel: NewProductViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     var showModal by remember { mutableStateOf(false) }
+
+    // ── SAF Launchers ─────────────────────────────────────────────────────────
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onExportUriReceived(uri, context.contentResolver)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importCatalogFromUri(uri, context.contentResolver)
+        }
+    }
+
+    // ── Toast feedback ────────────────────────────────────────────────────────
+
+    LaunchedEffect(uiState.toastMessage) {
+        uiState.toastMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            viewModel.clearToast()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Row 1 — Category tabs + delete button
@@ -84,9 +123,17 @@ fun ConfigurationScreen(
             searchQuery = uiState.searchQuery,
             onQueryChange = { viewModel.updateSearchQuery(it) },
             onNuevoProductoClick = { showModal = true },
-            onModificarJsonClick = { Log.d("ConfigurationScreen", "Modificar JSON") },
-            onImportarJsonClick = { Log.d("ConfigurationScreen", "Importar JSON") },
-            onExportarJsonClick = { Log.d("ConfigurationScreen", "Exportar JSON") }
+            onModificarJsonClick = { viewModel.openJsonEditor() },
+            onImportarJsonClick = {
+                importLauncher.launch(arrayOf("application/json", "*/*"))
+            },
+            onExportarJsonClick = {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                viewModel.exportCatalog()
+                exportLauncher.launch("catalogo_$timestamp.json")
+            },
+            isExporting = uiState.isExporting,
+            isImporting = uiState.isImporting
         )
 
         // Product list area — state machine as per design
@@ -160,6 +207,31 @@ fun ConfigurationScreen(
         DeleteCategoryDialog(
             onConfirm = { viewModel.confirmDeleteCategory() },
             onDismiss = { viewModel.dismissDeleteCategoryDialog() }
+        )
+    }
+
+    // ── Import Confirm Dialog ─────────────────────────────────────────────────
+
+    if (uiState.showImportConfirmDialog) {
+        ImportConfirmDialog(
+            onConfirm = {
+                viewModel.confirmImport()
+                if (uiState.showJsonEditor) {
+                    viewModel.closeJsonEditor()
+                }
+            },
+            onDismiss = { viewModel.dismissImportDialog() }
+        )
+    }
+
+    // ── JSON Editor Dialog ────────────────────────────────────────────────────
+
+    if (uiState.showJsonEditor) {
+        JsonEditorDialog(
+            content = uiState.jsonEditorContent,
+            error = uiState.jsonEditorError,
+            onApply = { editedText -> viewModel.applyJsonEditorChanges(editedText) },
+            onDismiss = { viewModel.closeJsonEditor() }
         )
     }
 }
@@ -252,6 +324,8 @@ private fun ActionBarRow(
     onModificarJsonClick: () -> Unit,
     onImportarJsonClick: () -> Unit,
     onExportarJsonClick: () -> Unit,
+    isExporting: Boolean = false,
+    isImporting: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -285,6 +359,7 @@ private fun ActionBarRow(
         // Outlined button: Modificar JSON
         OutlinedButton(
             onClick = onModificarJsonClick,
+            enabled = !isExporting && !isImporting,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
@@ -298,6 +373,7 @@ private fun ActionBarRow(
         // Outlined button: Importar JSON
         OutlinedButton(
             onClick = onImportarJsonClick,
+            enabled = !isExporting && !isImporting,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
@@ -311,11 +387,12 @@ private fun ActionBarRow(
         // Outlined button: Exportar JSON
         OutlinedButton(
             onClick = onExportarJsonClick,
+            enabled = !isExporting && !isImporting,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Text(
-                text = "Exportar JSON",
+                text = if (isExporting) "Exportando..." else "Exportar JSON",
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp
             )
@@ -346,6 +423,70 @@ private fun DeleteCategoryDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         title = { Text("Eliminar categoría") },
         text = { Text("¿Estás seguro? Eliminar esta categoría eliminará permanentemente todos los productos dentro de ella.") },
         confirmButton = { TextButton(onClick = onConfirm) { Text("Eliminar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+@Composable
+private fun ImportConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Importar Catálogo") },
+        text = {
+            Text(
+                "Esto reemplazará TODO el catálogo actual (categorías, productos y personalizaciones). " +
+                "Las órdenes existentes no se verán afectadas. ¿Continuar?"
+            )
+        },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Importar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+@Composable
+private fun JsonEditorDialog(
+    content: String,
+    error: String?,
+    onApply: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var editedText by remember(content) { mutableStateOf(content) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Modificar Catálogo JSON") },
+        text = {
+            Column {
+                Text(
+                    text = "Edita el JSON del catálogo completo. Los cambios reemplazarán todo el catálogo actual.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = editedText,
+                    onValueChange = { editedText = it },
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    isError = error != null
+                )
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onApply(editedText) }) { Text("Aplicar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
