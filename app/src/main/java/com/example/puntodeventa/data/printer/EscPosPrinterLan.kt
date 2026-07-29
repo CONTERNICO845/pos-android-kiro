@@ -1,5 +1,6 @@
 package com.example.puntodeventa.data.printer
 
+import com.example.puntodeventa.data.model.PrinterConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -8,148 +9,160 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.charset.Charset
 
-/**
- * Handles raw ESC/POS printing over TCP to a POS-8360 thermal printer.
- *
- * Connects to the printer on port 9100, sends ESC/POS initialization,
- * text content, and a paper-cut command.
- */
+/** Sends ESC/POS jobs over a raw TCP connection to a configured LAN printer. */
 object EscPosPrinterLan {
-
-    private const val PORT = 9100
+    private const val DEFAULT_PORT = 9100
+    private const val DEFAULT_PAPER_SIZE = 80
     private const val CONNECT_TIMEOUT_MS = 5_000
     private const val OVERALL_TIMEOUT_MS = 15_000L
+    private const val ESC_POS_PROTOCOL = "ESC/POS"
     private val CHARSET = Charset.forName("Cp850")
 
-    // ESC/POS command bytes
-    private val ESC_INIT = byteArrayOf(0x1B, 0x40)          // Initialize printer
-    private val ESC_CUT = byteArrayOf(0x1D, 0x56, 0x00)    // Full cut
-    private val ESC_DOUBLE_HEIGHT = byteArrayOf(0x1B, 0x21, 0x10)  // ESC ! n (double height)
-    private val ESC_NORMAL_SIZE = byteArrayOf(0x1B, 0x21, 0x00)    // ESC ! n (normal)
+    private val ESC_INIT = byteArrayOf(0x1B, 0x40)
+    private val ESC_CUT = byteArrayOf(0x1D, 0x56, 0x00)
+    private val ESC_DOUBLE_HEIGHT = byteArrayOf(0x1B, 0x21, 0x10)
+    private val ESC_NORMAL_SIZE = byteArrayOf(0x1B, 0x21, 0x00)
+    private val PAPER_FEED = "\n\n\n".toByteArray(CHARSET)
 
-    /**
-     * Prints [ticketText] to the thermal printer at [ipAddress].
-     *
-     * @param ipAddress The LAN IP address of the printer (e.g., "192.168.1.100")
-     * @param ticketText The pre-formatted ticket text to print
-     * @throws Exception if connection fails, times out, or any I/O error occurs
-     */
-    suspend fun printTicket(ipAddress: String, ticketText: String) {
-        withTimeout(OVERALL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) {
-                val socket = Socket()
-                try {
-                    socket.connect(InetSocketAddress(ipAddress, PORT), CONNECT_TIMEOUT_MS)
-                    socket.soTimeout = CONNECT_TIMEOUT_MS
+    /** Legacy API: prints at port 9100 on 80 mm paper and cuts. */
+    suspend fun printTicket(ipAddress: String, ticketText: String) =
+        printTicket(ipAddress, ticketText, DEFAULT_PORT, DEFAULT_PAPER_SIZE, autoCut = true)
 
-                    val outputStream: OutputStream = socket.getOutputStream()
-
-                    // Initialize printer
-                    outputStream.write(ESC_INIT)
-
-                    // Send ticket text as bytes (charset compatible with ESC/POS)
-                    outputStream.write(ticketText.toByteArray(CHARSET))
-
-                    // Feed and cut paper
-                    outputStream.write("\n\n\n".toByteArray(CHARSET))
-                    outputStream.write(ESC_CUT)
-
-                    outputStream.flush()
-                } finally {
-                    runCatching { socket.close() }
-                }
-            }
-        }
+    /** Prints one ticket using explicit network and paper settings. */
+    suspend fun printTicket(
+        ipAddress: String,
+        ticketText: String,
+        port: Int,
+        paperSize: Int,
+        autoCut: Boolean
+    ) = withPrinter(ipAddress, port) { output ->
+        writeNormalTicket(output, fitToPaper(ticketText, paperSize), autoCut)
     }
 
-    /**
-     * Prints two tickets (client and internal) sequentially over a single TCP connection.
-     *
-     * Each ticket is preceded by an ESC/POS init command and followed by paper feed + cut.
-     *
-     * @param ipAddress The LAN IP address of the printer (e.g., "192.168.1.100")
-     * @param clientTicketText The pre-formatted client ticket text
-     * @param internalTicketText The pre-formatted internal ticket text
-     * @throws Exception if connection fails, times out, or any I/O error occurs
-     */
-    suspend fun printDoubleTicket(ipAddress: String, clientTicketText: String, internalTicketText: String) {
-        withTimeout(OVERALL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) {
-                val socket = Socket()
-                try {
-                    socket.connect(InetSocketAddress(ipAddress, PORT), CONNECT_TIMEOUT_MS)
-                    socket.soTimeout = CONNECT_TIMEOUT_MS
+    /** Legacy API: prints both tickets through one connection using historical defaults. */
+    suspend fun printDoubleTicket(
+        ipAddress: String,
+        clientTicketText: String,
+        internalTicketText: String
+    ) = printDoubleTicket(
+        ipAddress, clientTicketText, internalTicketText,
+        DEFAULT_PORT, DEFAULT_PAPER_SIZE, autoCut = true
+    )
 
-                    val outputStream: OutputStream = socket.getOutputStream()
 
-                    // First ticket: client
-                    outputStream.write(ESC_INIT)
-                    outputStream.write(clientTicketText.toByteArray(CHARSET))
-                    outputStream.write("\n\n\n".toByteArray(CHARSET))
-                    outputStream.write(ESC_CUT)
-
-                    // Second ticket: internal
-                    outputStream.write(ESC_INIT)
-                    outputStream.write(internalTicketText.toByteArray(CHARSET))
-                    outputStream.write("\n\n\n".toByteArray(CHARSET))
-                    outputStream.write(ESC_CUT)
-
-                    outputStream.flush()
-                } finally {
-                    runCatching { socket.close() }
-                }
-            }
-        }
+    /** Prints two normal-size tickets with explicit settings over one TCP connection. */
+    suspend fun printDoubleTicket(
+        ipAddress: String,
+        clientTicketText: String,
+        internalTicketText: String,
+        port: Int,
+        paperSize: Int,
+        autoCut: Boolean
+    ) = withPrinter(ipAddress, port) { output ->
+        writeNormalTicket(output, fitToPaper(clientTicketText, paperSize), autoCut)
+        writeNormalTicket(output, fitToPaper(internalTicketText, paperSize), autoCut)
     }
 
-    /**
-     * Prints a standalone internal ticket with double-height text applied to the items section.
-     *
-     * The ticket is segmented into three parts:
-     * - [headerText]: printed in normal size (includes ticket header, column titles, separator)
-     * - [itemsText]: printed in double height (product rows, customization lines, notes, divider dashes)
-     * - [footerText]: printed in normal size (article count, footer lines)
-     *
-     * @param ipAddress The LAN IP address of the printer (e.g., "192.168.1.100")
-     * @param headerText The header portion of the internal ticket (normal size)
-     * @param itemsText The items portion of the internal ticket (double height)
-     * @param footerText The footer portion of the internal ticket (normal size)
-     * @throws Exception if connection fails, times out, or any I/O error occurs
-     */
+    /** Legacy API: prints the internal items in double height with historical defaults. */
     suspend fun printInternalTicketWithDoubleHeight(
         ipAddress: String,
         headerText: String,
         itemsText: String,
         footerText: String
+    ) = printInternalTicketWithDoubleHeight(
+        ipAddress, headerText, itemsText, footerText,
+        DEFAULT_PORT, DEFAULT_PAPER_SIZE, autoCut = true
+    )
+
+    /** Prints a segmented internal ticket with double-height items. */
+    suspend fun printInternalTicketWithDoubleHeight(
+        ipAddress: String,
+        headerText: String,
+        itemsText: String,
+        footerText: String,
+        port: Int,
+        paperSize: Int,
+        autoCut: Boolean
+    ) = withPrinter(ipAddress, port) { output ->
+        writeInternalTicket(
+            output,
+            fitToPaper(headerText, paperSize),
+            fitToPaper(itemsText, paperSize),
+            fitToPaper(footerText, paperSize),
+            autoCut
+        )
+    }
+
+    /**
+     * Prints the client and internal tickets through exactly one connection to [printer].
+     * The internal item section uses double-height text.
+     */
+    suspend fun printOrder(
+        printer: PrinterConfig,
+        clientTicketText: String,
+        internalHeader: String,
+        internalItems: String,
+        internalFooter: String
     ) {
+        requireEscPos(printer)
+        withPrinter(printer.ipAddress, printer.port) { output ->
+            writeNormalTicket(
+                output,
+                fitToPaper(clientTicketText, printer.paperSize),
+                printer.autoCut
+            )
+            writeInternalTicket(
+                output,
+                fitToPaper(internalHeader, printer.paperSize),
+                fitToPaper(internalItems, printer.paperSize),
+                fitToPaper(internalFooter, printer.paperSize),
+                printer.autoCut
+            )
+        }
+    }
+
+    /** Legacy API: tests port 9100 on 80 mm paper and cuts. */
+    suspend fun testConnection(ipAddress: String) =
+        testConnection(ipAddress, DEFAULT_PORT, DEFAULT_PAPER_SIZE, autoCut = true)
+
+    /** Tests a printer endpoint using explicit settings. */
+    suspend fun testConnection(
+        ipAddress: String,
+        port: Int,
+        paperSize: Int,
+        autoCut: Boolean
+    ) = printTicket(
+        ipAddress,
+        "Prueba de Conexion Exitosa",
+        port,
+        paperSize,
+        autoCut
+    )
+
+    /** Tests the configured printer and rejects unsupported protocols before connecting. */
+    suspend fun testConfiguredPrinter(printer: PrinterConfig) {
+        requireEscPos(printer)
+        testConnection(printer.ipAddress, printer.port, printer.paperSize, printer.autoCut)
+    }
+
+
+    private suspend fun withPrinter(
+        ipAddress: String,
+        port: Int,
+        block: (OutputStream) -> Unit
+    ) {
+        require(ipAddress.isNotBlank()) { "La dirección IP de la impresora está vacía" }
+        require(port in 1..65535) { "El puerto debe estar entre 1 y 65535" }
         withTimeout(OVERALL_TIMEOUT_MS) {
             withContext(Dispatchers.IO) {
                 val socket = Socket()
                 try {
-                    socket.connect(InetSocketAddress(ipAddress, PORT), CONNECT_TIMEOUT_MS)
+                    socket.connect(InetSocketAddress(ipAddress, port), CONNECT_TIMEOUT_MS)
                     socket.soTimeout = CONNECT_TIMEOUT_MS
-
-                    val outputStream: OutputStream = socket.getOutputStream()
-
-                    // Initialize printer
-                    outputStream.write(ESC_INIT)
-
-                    // Header in normal size
-                    outputStream.write(headerText.toByteArray(CHARSET))
-
-                    // Switch to double height for items
-                    outputStream.write(ESC_DOUBLE_HEIGHT)
-                    outputStream.write(itemsText.toByteArray(CHARSET))
-
-                    // Switch back to normal size for footer
-                    outputStream.write(ESC_NORMAL_SIZE)
-                    outputStream.write(footerText.toByteArray(CHARSET))
-
-                    // Feed and cut paper
-                    outputStream.write("\n\n\n".toByteArray(CHARSET))
-                    outputStream.write(ESC_CUT)
-
-                    outputStream.flush()
+                    socket.getOutputStream().use { output ->
+                        block(output)
+                        output.flush()
+                    }
                 } finally {
                     runCatching { socket.close() }
                 }
@@ -157,38 +170,46 @@ object EscPosPrinterLan {
         }
     }
 
-    /**
-     * Tests the connection to the thermal printer at [ipAddress] by sending
-     * a fixed test message ("Prueba de Conexion Exitosa") and cutting the paper.
-     *
-     * @param ipAddress The LAN IP address of the printer (e.g., "192.168.1.100")
-     * @throws Exception if connection fails, times out, or any I/O error occurs
-     */
-    suspend fun testConnection(ipAddress: String) {
-        withTimeout(OVERALL_TIMEOUT_MS) {
-            withContext(Dispatchers.IO) {
-                val socket = Socket()
-                try {
-                    socket.connect(InetSocketAddress(ipAddress, PORT), CONNECT_TIMEOUT_MS)
-                    socket.soTimeout = CONNECT_TIMEOUT_MS
+    private fun writeNormalTicket(output: OutputStream, text: String, autoCut: Boolean) {
+        output.write(ESC_INIT)
+        output.write(text.toByteArray(CHARSET))
+        finishTicket(output, autoCut)
+    }
 
-                    val outputStream: OutputStream = socket.getOutputStream()
+    private fun writeInternalTicket(
+        output: OutputStream,
+        header: String,
+        items: String,
+        footer: String,
+        autoCut: Boolean
+    ) {
+        output.write(ESC_INIT)
+        output.write(header.toByteArray(CHARSET))
+        output.write(ESC_DOUBLE_HEIGHT)
+        output.write(items.toByteArray(CHARSET))
+        output.write(ESC_NORMAL_SIZE)
+        output.write(footer.toByteArray(CHARSET))
+        finishTicket(output, autoCut)
+    }
 
-                    // Initialize printer
-                    outputStream.write(ESC_INIT)
+    private fun finishTicket(output: OutputStream, autoCut: Boolean) {
+        output.write(PAPER_FEED)
+        if (autoCut) output.write(ESC_CUT)
+    }
 
-                    // Send test message
-                    outputStream.write("Prueba de Conexion Exitosa".toByteArray(CHARSET))
+    private fun fitToPaper(text: String, paperSize: Int): String {
+        if (paperSize == 80) return text // Preserve the established 48-column output byte-for-byte.
+        require(paperSize == 58) { "Tamaño de papel no compatible: $paperSize mm. Use 58 u 80 mm." }
 
-                    // Feed and cut paper
-                    outputStream.write("\n\n\n".toByteArray(CHARSET))
-                    outputStream.write(ESC_CUT)
+        return text.split('\n').flatMap { rawLine ->
+            val line = rawLine.removeSuffix("\r")
+            if (line.isEmpty()) listOf("") else line.chunked(32)
+        }.joinToString("\n")
+    }
 
-                    outputStream.flush()
-                } finally {
-                    runCatching { socket.close() }
-                }
-            }
+    private fun requireEscPos(printer: PrinterConfig) {
+        require(printer.protocol.trim().equals(ESC_POS_PROTOCOL, ignoreCase = true)) {
+            "Protocolo no compatible: ${printer.protocol}. Solo se admite ESC/POS."
         }
     }
 }
