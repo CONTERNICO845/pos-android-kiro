@@ -63,12 +63,12 @@ class AppThemePropertyTest : StringSpec({
     }
 
     /**
-     * Enum has exactly 4 entries — guard against accidental additions without
+     * Enum has exactly 9 entries — guard against accidental additions without
      * updating the exhaustive when clauses.
      */
-    "AppTheme enum has exactly 4 entries" {
-        assert(AppTheme.entries.size == 4) {
-            "Expected 4 AppTheme entries, got ${AppTheme.entries.size}: ${AppTheme.entries}"
+    "AppTheme enum has exactly 9 entries" {
+        assert(AppTheme.entries.size == 9) {
+            "Expected 9 AppTheme entries, got ${AppTheme.entries.size}: ${AppTheme.entries}"
         }
     }
 

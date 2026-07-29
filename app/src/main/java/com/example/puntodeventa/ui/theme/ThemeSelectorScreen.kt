@@ -27,8 +27,11 @@ fun ThemeSelectorScreen(
     onThemeSelected: (AppTheme) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Adaptive columns keep the grid elegant as the theme catalog grows:
+    // ~2 columns on phones, more on wider POS/tablet screens. The list scrolls
+    // vertically so any number of themes fits comfortably.
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Adaptive(minSize = 160.dp),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
