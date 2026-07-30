@@ -1,8 +1,8 @@
 # AGENT.md — PuntoDeVenta
 
 > **Mapa de contexto maestro.** Este archivo describe el estado **real** del proyecto (no el planificado).
-> Última actualización: 2026-07-29 · Rama: `master` · Specs indexadas: 21 · Specs completas: 21/21
-> Estado local: soporte **multiimpresora LAN + discovery** implementado, todavía sin push y pendiente de validación física con impresoras reales.
+> Última actualización: 2026-07-30 · Rama: `main` · Specs indexadas: 21 · Specs completas: 21/21
+> Estado local: soporte **multiimpresora LAN + discovery** implementado; **dashboard de estadísticas enterprise** con gráfica de ventas interactiva, indicadores de comparación vs periodo anterior, desglose por método de pago y exportación CSV — entregado y pushed a `main` y `master`.
 
 ---
 
@@ -16,14 +16,17 @@ Flujo funcional completo hoy:
 1. **Inicio** — el operador crea "menús" (tarjetas con emoji + nombre) y toca uno para entrar al POS.
 2. **POS** — catálogo filtrable por menú / categoría / búsqueda, modal de producto con personalizaciones
    y notas, carrito editable con divisor de cuenta ("tijeras").
-3. **Checkout** — nombre de cliente, estado de pago, teclado de denominaciones, asistente de cambio y
-   modal de confirmación.
+3. **Checkout** — nombre de cliente, estado de pago, **método de pago** (Efectivo/Tarjeta/Transferencia),
+   teclado de denominaciones, asistente de cambio y modal de confirmación.
 4. **Impresión** — genera ticket cliente + interno y los envía secuencialmente por **ESC/POS/TCP** a
    todas las impresoras LAN activas, respetando puerto, papel 58/80 mm y autocorte por destino; los
    reintentos omiten impresoras ya exitosas y la orden solo se guarda cuando todas terminan.
 5. **Persistencia** — la orden se guarda en Room con el texto exacto de ambos tickets.
-6. **Consulta** — pantallas de Estadísticas (ingresos, órdenes, ticket promedio, top productos) e
-   Historial de Tickets con reimpresión del ticket cliente a todas las impresoras activas.
+6. **Consulta** — pantallas de Estadísticas (**gráfica de tendencia de ventas** con granularidad
+   adaptativa hora/día/mes, **indicadores % vs periodo anterior** en cada métrica, **desglose de
+   ingresos por método de pago** con donut chart, top productos, órdenes recientes y **exportación
+   CSV** vía SAF) e Historial de Tickets con reimpresión del ticket cliente a todas las impresoras
+   activas.
 7. **Configuración** — CRUD de categorías/productos, **importar/exportar/modificar catálogo vía JSON**,
    gestión multiimpresora con activación individual y discovery LAN, y selector de tema.
 
@@ -35,7 +38,7 @@ Flujo funcional completo hoy:
 | UI | Jetpack Compose (BOM `2026.02.01`) + Material 3 + `material-icons-extended` |
 | Build | Gradle KTS + **version catalog** (`libs.*`), AGP `9.2.1`, KSP `2.2.10-2.0.2` |
 | SDK | `minSdk 24` · `compileSdk 37` · `targetSdk 37` |
-| Persistencia | Room `2.7.1` (KSP) + DataStore Preferences `1.1.4` (tema e impresoras) + SharedPreferences solo para migración legacy de impresoras |
+| Persistencia | Room `2.7.1` (KSP) + DataStore Preferences `1.1.4` (tema e impresoras) + SharedPreferences solo para migración legacy de impresoras. **AppDatabase v5** con `Migration(4,5)` para `orders.paymentMethod`. |
 | Serialización | kotlinx-serialization-json `1.8.1` (catálogo y lista de impresoras) |
 | Lifecycle | lifecycle `2.11.0` (viewmodel-compose, runtime-compose), activity-compose `1.13.0` |
 | Arquitectura | MVVM + UDF, `StateFlow` / `collectAsStateWithLifecycle()` |
@@ -59,7 +62,9 @@ app/src/main/java/com/example/puntodeventa/
 │   │                            #       SelectionType, 8 *Entity, 6 *Dao
 │   ├── json/                    # DTOs @Serializable para import/export de catálogo JSON
 │   ├── model/                   # Modelos de dominio/proyección: MenuItem, Category, Product,
-│   │                            #       ProductSaleSummary, PrinterConfig (8 campos)
+│   │                            #       ProductSaleSummary, PrinterConfig (8 campos),
+│   │                            #       PaymentMethod, PeriodSummary, PaymentMethodRevenue,
+│   │                            #       OrderTotalPoint
 │   ├── printer/                 # EscPosPrinterLan + LanPrinterDiscovery
 │   └── repository/              # Menu, Category, Product, Order, CatalogJson,
 │                                #       PrinterPreferences (lista JSON en DataStore dedicado),
@@ -78,7 +83,10 @@ app/src/main/java/com/example/puntodeventa/
     ├── configuration/           # ConfigurationScreen, ConfigurationViewModel, ProductCard
     ├── newproduct/              # NewProductModal, NewProductViewModel, GroupCard,
     │                            #       EmojiPicker, SelectionTypeDropdown
-    ├── stats/                   # StatsScreen, StatsViewModel, StatsUiState, StatsFormatters, TimeFilter
+    ├── stats/                   # StatsScreen, StatsViewModel, StatsUiState, StatsFormatters,
+    │                            #       TimeFilter, DateRangePickerDialog, SalesTrendCalculator,
+    │                            #       SalesTrendChart, PaymentMethodDonut, MetricDelta,
+    │                            #       StatsCsvBuilder
     ├── tickets/                 # TicketsScreen(→TicketHistoryScreen), TicketHistoryViewModel,
     │                            #       TicketHistoryUiState, TicketCard, TicketHistoryTopBar
     ├── printer/                 # Pantalla/config multiimpresora: bottom sheet, formulario, switches,
@@ -91,7 +99,7 @@ app/src/main/java/com/example/puntodeventa/
 
 ### 2.2 Base de datos (Room)
 
-`data/local/AppDatabase.kt` — `punto_de_venta_db`, **version = 4**, `exportSchema = false`,
+`data/local/AppDatabase.kt` — `punto_de_venta_db`, **version = 5**, `exportSchema = false`,
 singleton `@Volatile INSTANCE` + `synchronized` vía `getInstance(context)`.
 
 Jerarquía de entidades (todas las FK con `onDelete = CASCADE` e `Index` en la columna FK):
@@ -104,14 +112,15 @@ menu_items (MenuItemEntity)
             └── customization_options.groupId
 
 orders (OrderEntity)                     # id, timestamp, totalAmount, status:String,
-└── order_items.orderId                  # customerName?, clientTicketText?, internalTicketText?
-    └── order_item_customizations.orderItemId
+└── order_items.orderId                  # customerName?, clientTicketText?, internalTicketText?,
+    └── order_item_customizations.orderItemId # paymentMethod (NOT NULL DEFAULT 'EFECTIVO')
 ```
 
 - **DAOs (6):** `MenuItemDao`, `CategoryDao`, `ProductDao`, `CustomizationGroupDao`,
   `CustomizationOptionDao`, `OrderDao`. No hay DAO propio para `order_items` /
   `order_item_customizations`: sus inserts viven en `OrderDao`.
-- **Migraciones:** ninguna. Se usa `fallbackToDestructiveMigration(dropAllTables = true)`.
+- **Migraciones:** una explícita: `Migration(4, 5)` → `ALTER TABLE orders ADD COLUMN paymentMethod
+  TEXT NOT NULL DEFAULT 'EFECTIVO'`. `fallbackToDestructiveMigration` existe como last-resort.
 - **TypeConverters:** ninguno. `SelectionType` se serializa a mano (`value` / `fromValue`).
 - **FK enforcement:** `Callback.onOpen { PRAGMA foreign_keys = ON }`.
 - **Seeder:** `DatabaseSeeder.seedIfEmpty(db)` con IDs deterministas
@@ -347,7 +356,7 @@ Contexto para no "arreglar" cosas que son decisiones conscientes, y para saber d
 |---|---|---|
 | 1 | DI manual | Repos y DB se instancian por Activity. `PosScreen` recibe **DAOs de Room directamente** y `NewProductViewModel.Factory` recibe el `AppDatabase` completo: la UI está acoplada a la persistencia. |
 | 2 | `runBlocking` en `getInstance` | El seeder se ejecuta con `runBlocking(Dispatchers.IO)` desde `MainActivity.onCreate`, es decir bloqueando el main thread. |
-| 3 | Migraciones inexistentes | `fallbackToDestructiveMigration(dropAllTables = true)` en v4 y `exportSchema = false`: cada bump de versión borra los datos y no hay validación de esquema. |
+| 3 | Migraciones incompletas | Solo `Migration(4,5)` existe. `fallbackToDestructiveMigration(dropAllTables = true)` en v5 y `exportSchema = false`: cualquier bump **diferente a la ruta 4→5** borra los datos. |
 | 4 | Dos DataStores/formato distinto | Impresora y tema usan **Preferences DataStore** dedicados, pero impresora conserva API síncrona y serializa una lista JSON, mientras tema expone `Flow` y guarda un enum simple. `SharedPreferences printer_config` queda solo como origen de migración legacy. |
 | 5 | ~~Theming a medias~~ | **Resuelto.** Todos los componentes (`ui/pos`, `ui/printer`, `ui/newproduct`, `ui/home`, `AppNavRail`) ahora usan `MaterialTheme.colorScheme` y reaccionan dinámicamente al cambio de tema sin reinicio de app. `Color.kt` permanece como referencia histórica pero ya no se importa desde producción. |
 | 6 | Navegación frágil | Sin Navigation Compose: el destino es `mutableStateOf` (no `rememberSaveable`), sin back stack; los `route` son decorativos. `NavDestination.Settings` renderiza `ConfigurationScreen`. |
@@ -357,7 +366,7 @@ Contexto para no "arreglar" cosas que son decisiones conscientes, y para saber d
 | 10 | `PosViewModel` monolítico | ~750 líneas y ~14 `MutableStateFlow` internos, con `@OptIn(ExperimentalCoroutinesApi, FlowPreview)`. |
 | 11 | Tests inconsistentes | `PrinterConfigViewModelTest` está **duplicado** en `test/` y `androidTest/`; `androidTest/assets/printer_sources/` contiene **copias de fuentes de producción** que se desincronizarán; hay property tests instrumentados que en realidad son puros. |
 | 12 | Build | `compileSdk`/`targetSdk` 37 (preview) con `minSdk 24`; release sin minify ni firma; `kotlinx-coroutines-core` no se declara (llega transitivamente). |
-| 13 | `OrderEntity.status` | Es un `String` libre; los valores válidos (`COMPLETED`, `CANCELLED`, `REFUNDED`) solo están documentados en comentarios, sin enum ni TypeConverter. |
+| 13 | `OrderEntity.status` | Es un `String` libre; los valores válidos (`Pagado`, `No pagó`, `Paga después`) solo están documentados en la enum `PaymentStatus`. `paymentMethod` sí es un enum (`EFECTIVO`/`TARJETA`/`TRANSFERENCIA`) con fallback a cash para tokens desconocidos. |
 
 ---
 

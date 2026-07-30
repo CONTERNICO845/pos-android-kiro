@@ -2,7 +2,7 @@
 
 Aplicación Android nativa de **Punto de Venta** para un negocio de comida ("LOS TACOS"), diseñada principalmente para **tablet en orientación horizontal**, con soporte para teléfonos en vertical.
 
-Incluye gestión de menús, catálogo de productos con personalizaciones, carrito de compras, checkout con asistente de cambio, impresión de tickets por red LAN a impresora térmica, historial de tickets con reimpresión, estadísticas de ventas y un motor de temas dinámico.
+Incluye gestión de menús, catálogo de productos con personalizaciones, carrito de compras, checkout con asistente de cambio y selección de método de pago, impresión de tickets por red LAN a impresoras térmicas (multiimpresora), historial de tickets con reimpresión, **dashboard de estadísticas enterprise** (gráfica de ventas interactiva, comparación periodo-sobre-periodo, desglose por método de pago y exportación CSV) y un motor de temas dinámico con 9 esquemas de color.
 
 ---
 
@@ -41,7 +41,9 @@ Incluye gestión de menús, catálogo de productos con personalizaciones, carrit
 - Panel de cobro estilo calculadora con nombre de cliente
 - Teclado de denominaciones de billetes mexicanos
 - Cálculo automático de cambio
-- Estado de pago (Efectivo, Tarjeta, etc.)
+- **Método de pago:** Efectivo, Tarjeta o Transferencia (persiste con la orden)
+- Estado de pago (Pagado, No pagó, Paga después)
+- Tarjeta y transferencia no requieren que el efectivo cubra el total
 - Modal de confirmación antes de imprimir
 
 ### Impresión Térmica por LAN
@@ -53,11 +55,24 @@ Incluye gestión de menús, catálogo de productos con personalizaciones, carrit
 - Hasta 3 reintentos automáticos en caso de fallo
 - Encoding **Cp850** para caracteres latinos (acentos, eñes)
 
-### Estadísticas
-- Dashboard con ingresos totales, número de órdenes, ticket promedio
+### Estadísticas (Enterprise Dashboard)
+- **Gráfica de tendencia de ventas** interactiva (Canvas, sin librería externa)
+  - Granularidad adaptativa: horas para Hoy/Ayer, días para Este Mes, meses para Todo
+  - Toggle barras / línea
+  - Tap para inspeccionar un bucket con tooltip de periodo y monto
+- **Indicadores de comparación vs periodo anterior** en cada tarjeta de métrica
+  - Flecha y porcentaje (`+5.0%`, `-2.3%`, `0.0%`, o "Nuevo" cuando no hay baseline)
+  - Se ocultan en el filtro "Todo" (no hay periodo previo por definición)
+- **Desglose de ingresos por método de pago** (Efectivo/Tarjeta/Transferencia)
+  - Donut chart con arcos proporcionales a la participación de cada método
+  - Leyenda con nombre, monto, % y número de órdenes
+- **Exportación de reporte a CSV** vía Storage Access Framework
+  - Resumen + comparación, ventas por método, tendencia y top productos
+  - RFC 4180, UTF-8 BOM, números como decimales puros para spreadsheets
+- Dashboard con ingresos totales, número de órdenes, ticket promedio, clientes únicos
 - Top 50 productos más vendidos
-- Órdenes recientes
-- Filtro temporal: Hoy / Ayer / Este Mes / Todo
+- Órdenes recientes (últimas 20)
+- Filtro temporal: Hoy / Ayer / Este Mes / Todo / Rango personalizado (DateRangePicker)
 
 ### Historial de Tickets
 - Lista de órdenes con tarjetas estilo recibo monoespaciado
@@ -158,7 +173,9 @@ app/src/main/java/com/example/puntodeventa/
 ├── data/
 │   ├── local/                      # Room: AppDatabase, Entities, DAOs, Seeder
 │   ├── json/                       # DTOs @Serializable para import/export JSON
-│   ├── model/                      # Modelos de dominio: MenuItem, Category, Product
+│   ├── model/                      # Modelos de dominio: MenuItem, Category, Product,
+│   │                               #   PaymentMethod, PeriodSummary, PaymentMethodRevenue,
+│   │                               #   OrderTotalPoint, ProductSaleSummary, PrinterConfig
 │   ├── printer/                    # EscPosPrinterLan (TCP ESC/POS)
 │   └── repository/                 # Menu, Category, Product, Order, CatalogJson, Printer, Theme
 └── ui/
@@ -169,7 +186,9 @@ app/src/main/java/com/example/puntodeventa/
     │                               #   TicketFormatter, ProductModal, CashKeypad
     ├── configuration/              # ConfigurationScreen, ConfigurationViewModel
     ├── newproduct/                 # NewProductModal, NewProductViewModel, GroupCard
-    ├── stats/                      # StatsScreen, StatsViewModel, TimeFilter
+    ├── stats/                      # StatsScreen, StatsViewModel, TimeFilter,
+    │                               #   SalesTrendCalculator, SalesTrendChart, PaymentMethodDonut,
+    │                               #   MetricDelta, StatsCsvBuilder, StatsFormatters
     ├── tickets/                    # TicketHistoryScreen, TicketHistoryViewModel, TicketCard
     └── printer/                    # PrinterScreen, PrinterConfigViewModel, ControlPanel
 ```
@@ -251,7 +270,10 @@ El motor de temas ofrece **9 esquemas de color** (6 claros + 3 oscuros), selecci
 
 ## 🗄️ Base de Datos
 
-**Room** v4 con `fallbackToDestructiveMigration` — nombre: `punto_de_venta_db`
+**Room** v5 con `Migration(4,5)` explícita — nombre: `punto_de_venta_db`
+
+> La migración 4→5 agrega la columna `orders.paymentMethod` con default `'EFECTIVO'` para preservar
+> el historial de órdenes al actualizar. `fallbackToDestructiveMigration` sigue como last-resort.
 
 ### Esquema de entidades
 
