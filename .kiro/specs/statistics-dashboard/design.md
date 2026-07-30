@@ -382,11 +382,16 @@ Decision table:
 | Condition | direction | percent | UI |
 |---|---|---|---|
 | `!hasComparison` (filter ALL) | FLAT | null | indicator hidden |
-| `previous == 0 && current == 0` | FLAT | 0.0 | neutral "0.0%" |
-| `previous == 0 && current > 0` | NO_BASELINE | null | "Nuevo", positive color |
-| `previous > 0 && current > previous` | UP | `(c-p)/p*100` | ▲ green, "+x.x%" |
-| `previous > 0 && current < previous` | DOWN | `(c-p)/p*100` | ▼ red, "-x.x%" |
-| `previous > 0 && current == previous` | FLAT | 0.0 | neutral "0.0%" |
+| `previous < ε && current < ε` | FLAT | 0.0 | neutral "0.0%" |
+| `previous < ε && current >= ε` | NO_BASELINE | null | "Nuevo", positive color |
+| `previous >= ε && current > previous` | UP | `(c-p)/p*100` | ▲ green, "+x.x%" |
+| `previous >= ε && current < previous` | DOWN | `(c-p)/p*100` | ▼ red, "-x.x%" |
+| `previous >= ε && current == previous` | FLAT | 0.0 | neutral "0.0%" |
+
+`ε = MetricDelta.BASELINE_EPSILON = 0.005` (half a cent). Every compared metric is money or a whole
+count, so a smaller baseline is economically zero; dividing by it would yield an astronomic — or, for
+a subnormal double, infinite — percentage rather than information. A ratio that still overflows, or a
+non-finite input, degrades to `NO_BASELINE` instead of propagating `Infinity`/`NaN` into the UI.
 
 Previous-range resolution (`computePreviousRange`):
 
@@ -626,7 +631,7 @@ No `FileProvider`, no storage permission: SAF hands back a writable Uri, which i
 
 ### Property 16: Metric delta correctness
 
-*For any* pair of non-negative numbers `(current, previous)` with `hasComparison == true`, `MetricDelta.of` SHALL satisfy: `previous > 0` ⇒ `percent == (current - previous) / previous * 100` and the direction matches `compare(current, previous)`; `previous == 0 && current > 0` ⇒ `direction == NO_BASELINE` and `percent == null`; `previous == 0 && current == 0` ⇒ `direction == FLAT` and `percent == 0.0`. The result SHALL never be `NaN` or infinite. *For any* pair with `hasComparison == false`, `available` SHALL be `false`.
+*For any* pair of non-negative numbers `(current, previous)` with `hasComparison == true`, `MetricDelta.of` SHALL satisfy: `previous >= ε` ⇒ `percent == (current - previous) / previous * 100` and the direction matches `compare(current, previous)`; `previous < ε && current >= ε` ⇒ `direction == NO_BASELINE` and `percent == null`; `previous < ε && current < ε` ⇒ `direction == FLAT` and `percent == 0.0`. The result SHALL never be `NaN` or infinite. *For any* pair with `hasComparison == false`, `available` SHALL be `false`.
 
 **Validates: Requirements 13.4, 13.5, 13.6, 13.7, 13.8, 13.9**
 
