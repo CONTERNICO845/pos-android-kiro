@@ -6,6 +6,9 @@ import com.example.puntodeventa.data.local.OrderDao
 import com.example.puntodeventa.data.local.OrderEntity
 import com.example.puntodeventa.data.local.OrderItemCustomizationEntity
 import com.example.puntodeventa.data.local.OrderItemEntity
+import com.example.puntodeventa.data.model.OrderTotalPoint
+import com.example.puntodeventa.data.model.PaymentMethodRevenue
+import com.example.puntodeventa.data.model.PeriodSummary
 import com.example.puntodeventa.data.model.ProductSaleSummary
 import kotlinx.coroutines.flow.Flow
 
@@ -33,6 +36,20 @@ class OrderRepository(
 
     suspend fun getOrdersByTimeRange(start: Long, end: Long): List<OrderEntity> =
         orderDao.getOrdersByTimeRange(start, end)
+
+    // ── Enterprise dashboard (v2) ─────────────────────────────────────────────
+
+    /** Summary of one window; used for the selected period and its comparison baseline. (Req 2.8) */
+    fun getPeriodSummaryFlow(start: Long, end: Long): Flow<PeriodSummary> =
+        orderDao.getPeriodSummaryFlow(start, end)
+
+    /** Revenue per tender type in the window. (Req 2.9) */
+    fun getPaymentMethodBreakdownFlow(start: Long, end: Long): Flow<List<PaymentMethodRevenue>> =
+        orderDao.getPaymentMethodBreakdownFlow(start, end)
+
+    /** Raw (timestamp, amount) points feeding the sales trend chart. (Req 2.10) */
+    fun getOrderTotalsFlow(start: Long, end: Long): Flow<List<OrderTotalPoint>> =
+        orderDao.getOrderTotalsFlow(start, end)
 
     suspend fun persistOrder(
         order: OrderEntity,

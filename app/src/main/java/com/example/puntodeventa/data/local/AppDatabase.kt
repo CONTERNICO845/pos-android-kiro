@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.puntodeventa.data.model.PAYMENT_METHOD_CASH_STORAGE_VALUE
 
 @Database(
     entities = [
@@ -17,7 +19,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         OrderItemEntity::class,             // version 3 — new
         OrderItemCustomizationEntity::class // version 3 — new
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -45,6 +47,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 → v5: adds `orders.paymentMethod` for the statistics payment breakdown. (Req 14.2)
+         *
+         * This is the first real migration in the project: every previous bump relied on
+         * [androidx.room.RoomDatabase.Builder.fallbackToDestructiveMigration], which would wipe the
+         * whole order history. Existing rows get the SQL default so they are reported as cash sales.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE orders ADD COLUMN paymentMethod TEXT NOT NULL " +
+                        "DEFAULT '$PAYMENT_METHOD_CASH_STORAGE_VALUE'"
+                )
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             val existing = INSTANCE
             if (existing != null) return existing
@@ -59,6 +77,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         "punto_de_venta_db"
                     )
+                        .addMigrations(MIGRATION_4_5)      // preserves order history on upgrade
                         .fallbackToDestructiveMigration(dropAllTables = true)
                         .addCallback(foreignKeyCallback)   // enables CASCADE at runtime
                         .build()
