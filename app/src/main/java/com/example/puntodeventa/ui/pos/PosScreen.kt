@@ -125,6 +125,7 @@ fun PosScreen(
                     isCompletarEnabled = viewModel.isCompletarOrdenEnabled(),
                     onCustomerNameChange = { viewModel.updateCustomerName(it) },
                     onPaymentStatusSelected = { viewModel.selectPaymentStatus(it) },
+                    onPaymentMethodSelected = { viewModel.selectPaymentMethod(it) },
                     onDenominationPressed = { viewModel.addDenomination(it) },
                     onClearCashReceived = { viewModel.clearCashReceived() },
                     onCompletarOrden = { viewModel.showConfirmationModal() },

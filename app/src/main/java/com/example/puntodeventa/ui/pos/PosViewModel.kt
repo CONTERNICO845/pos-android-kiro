@@ -7,6 +7,7 @@ import com.example.puntodeventa.data.local.OrderEntity
 import com.example.puntodeventa.data.local.OrderItemCustomizationEntity
 import com.example.puntodeventa.data.local.OrderItemEntity
 import com.example.puntodeventa.data.model.Category
+import com.example.puntodeventa.data.model.PaymentMethod
 import com.example.puntodeventa.data.model.Product
 import com.example.puntodeventa.data.printer.EscPosPrinterLan
 import com.example.puntodeventa.data.repository.CategoryRepository
@@ -430,6 +431,11 @@ class PosViewModel(
         _checkoutState.value = _checkoutState.value.copy(paymentStatus = status)
     }
 
+    /** Selects the tender type. Exactly one is always active; defaults to cash. (Req 14.3) */
+    fun selectPaymentMethod(method: PaymentMethod) {
+        _checkoutState.value = _checkoutState.value.copy(paymentMethod = method)
+    }
+
     /** Adds a denomination to cash received. Ignores if it would exceed $999,999.99.
      *  Recalculates cashReceived as sum of (denomination × count) + custom amounts. */
     fun addDenomination(value: Int) {
@@ -474,13 +480,18 @@ class PosViewModel(
     /** Returns whether the "Completar Orden" button should be enabled.
      *  Disabled when:
      *  - customer name is blank (trimmed empty)
-     *  - payment status is PAGADO and cash received < cart total
+     *  - payment status is PAGADO, the tender is cash, and cash received < cart total
+     *
+     *  Card and transfer payments settle outside the drawer, so the denomination keypad is not part
+     *  of their validation. (Req 14.4)
      */
     fun isCompletarOrdenEnabled(): Boolean {
         val state = _checkoutState.value
         val cartTotal = _cartItems.value.filter { !it.isDivider }.sumOf { it.totalPrice }
         if (state.customerName.trim().isEmpty()) return false
-        if (state.paymentStatus == PaymentStatus.PAGADO && state.cashReceived < cartTotal) return false
+        val requiresCash = state.paymentStatus == PaymentStatus.PAGADO &&
+            state.paymentMethod == PaymentMethod.CASH
+        if (requiresCash && state.cashReceived < cartTotal) return false
         return true
     }
 
@@ -553,7 +564,11 @@ class PosViewModel(
                 )
             }
 
-            val change = if (checkoutState.paymentStatus == PaymentStatus.PAGADO && checkoutState.cashReceived > 0) {
+            // Cash/change only make sense for a cash tender; a card or transfer sale prints neither.
+            val isCashSale = checkoutState.paymentStatus == PaymentStatus.PAGADO &&
+                checkoutState.paymentMethod == PaymentMethod.CASH
+
+            val change = if (isCashSale && checkoutState.cashReceived > 0) {
                 BigDecimal(checkoutState.cashReceived)
                     .subtract(BigDecimal(totalAmount))
                     .setScale(2, RoundingMode.HALF_UP)
@@ -568,7 +583,7 @@ class PosViewModel(
                 paymentStatus = checkoutState.paymentStatus.displayText,
                 items = ticketLineItems,
                 totalAmount = totalAmount,
-                cashReceived = if (checkoutState.paymentStatus == PaymentStatus.PAGADO) checkoutState.cashReceived else 0.0,
+                cashReceived = if (isCashSale) checkoutState.cashReceived else 0.0,
                 change = change
             )
 
@@ -631,6 +646,7 @@ class PosViewModel(
                     timestamp = timestamp,
                     totalAmount = totalAmount,
                     status = checkoutState.paymentStatus.displayText,
+                    paymentMethod = checkoutState.paymentMethod.storageValue,  // (Req 14.3)
                     customerName = checkoutState.customerName.ifBlank { null },
                     clientTicketText = clientTicketText,
                     internalTicketText = internalTicketText

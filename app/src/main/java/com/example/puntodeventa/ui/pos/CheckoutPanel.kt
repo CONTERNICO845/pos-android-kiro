@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.MaterialTheme
+import com.example.puntodeventa.data.model.PaymentMethod
 
 /**
  * Checkout panel composable with full "Calculator/Assistant" layout.
@@ -47,6 +48,7 @@ fun CheckoutPanel(
     isCompletarEnabled: Boolean,
     onCustomerNameChange: (String) -> Unit,
     onPaymentStatusSelected: (PaymentStatus) -> Unit,
+    onPaymentMethodSelected: (PaymentMethod) -> Unit,
     onDenominationPressed: (Int) -> Unit,
     onClearCashReceived: () -> Unit,
     onCompletarOrden: () -> Unit,
@@ -97,6 +99,14 @@ fun CheckoutPanel(
         PaymentStatusPills(
             selectedStatus = checkoutState.paymentStatus,
             onStatusSelected = onPaymentStatusSelected
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 2b. Payment method pills — the tender type reported by the statistics dashboard (Req 14.3)
+        PaymentMethodPills(
+            selectedMethod = checkoutState.paymentMethod,
+            onMethodSelected = onPaymentMethodSelected
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -269,6 +279,76 @@ fun PaymentStatusPills(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Row of 3 pill-shaped mutually exclusive tender buttons ("Efectivo", "Tarjeta", "Transferencia")
+ * with equal width. Default selection is "Efectivo" (determined by CheckoutState default).
+ *
+ * The selected method is persisted on the order and drives the "Ventas por método de pago"
+ * breakdown on the statistics dashboard.
+ *
+ * Satisfies Requirements: 14.3
+ */
+@Composable
+fun PaymentMethodPills(
+    selectedMethod: PaymentMethod,
+    onMethodSelected: (PaymentMethod) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val pillShape = RoundedCornerShape(50)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Método de pago",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PaymentMethod.entries.forEach { method ->
+                val isSelected = method == selectedMethod
+
+                if (isSelected) {
+                    Button(
+                        onClick = { onMethodSelected(method) },
+                        shape = pillShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = method.displayName,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { onMethodSelected(method) },
+                        shape = pillShape,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = method.displayName,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
