@@ -131,8 +131,8 @@ data class StatsUiState(
     val trendSeries: List<SalesTrendPoint> = emptyList(),
     val trendGranularity: TrendGranularity = TrendGranularity.HOURLY,
     val chartMode: ChartMode = ChartMode.BAR,
-    // ── Payment breakdown ──
-    val paymentBreakdown: List<PaymentMethodRevenue> = emptyList(),
+    // ── Payment breakdown (raw rows resolved to PaymentSlice by the ViewModel) ──
+    val paymentBreakdown: List<PaymentSlice> = emptyList(),
     // ── Lists ──
     val topProducts: List<ProductSaleSummary> = emptyList(),
     val recentOrders: List<OrderEntity> = emptyList(),
@@ -399,7 +399,7 @@ Previous-range resolution (`computePreviousRange`):
 |---|---|
 | TODAY | `[start - 1 day, end - 1 day]` — same clock window yesterday |
 | YESTERDAY | `[start - 1 day, end - 1 day]` — the full day before yesterday |
-| THIS_MONTH | starts at midnight of the 1st of the previous month, same duration as the current window |
+| THIS_MONTH | starts at midnight of the 1st of the previous month, same duration as the current window, **clamped** so it ends before the current month (30 elapsed days of March against a 28-day February would otherwise reach into March) |
 | CUSTOM | `[start - span, start - 1ms]` where `span = end - start` |
 | ALL | `null` — there is no earlier data by definition |
 
@@ -637,7 +637,7 @@ No `FileProvider`, no storage permission: SAF hands back a writable Uri, which i
 
 ### Property 17: Previous range shape
 
-*For any* `TimeFilter` other than ALL and *for any* range `[start, end]` produced by `computeRange`, `computePreviousRange` SHALL return a non-null `[pStart, pEnd]` where `pStart <= pEnd`, `pEnd < start` (the windows never overlap), and `pEnd - pStart == end - start` for TODAY, YESTERDAY and CUSTOM. For ALL it SHALL return `null`.
+*For any* `TimeFilter` other than ALL and *for any* range `[start, end]` produced by `computeRange`, `computePreviousRange` SHALL return a non-null `[pStart, pEnd]` where `pStart <= pEnd` and `pEnd < start` (the windows never overlap). The duration SHALL be preserved exactly for CUSTOM, and within one hour for TODAY and YESTERDAY (local-date arithmetic across a DST boundary shifts the duration by the offset change). THIS_MONTH is exempt from duration equality because its window is clamped to avoid overlap. For ALL it SHALL return `null`.
 
 **Validates: Requirements 13.1, 13.2**
 
