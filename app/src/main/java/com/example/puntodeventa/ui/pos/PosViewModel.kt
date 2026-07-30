@@ -418,10 +418,10 @@ class PosViewModel(
         _isCheckoutVisible.value = false
     }
 
-    /** Updates the customer name, trimming whitespace and truncating to 40 chars. */
+    /** Updates the customer name, truncating to 40 chars. Allows internal spaces. */
     fun updateCustomerName(name: String) {
         _checkoutState.value = _checkoutState.value.copy(
-            customerName = name.trim().take(40)
+            customerName = name.take(40)
         )
     }
 

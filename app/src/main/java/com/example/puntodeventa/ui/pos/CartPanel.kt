@@ -54,6 +54,8 @@ fun CartPanel(
     onItemClick: (CartItem) -> Unit,
     onCompleteOrder: () -> Unit,
     isCartEmpty: Boolean = false,
+    isCheckoutVisible: Boolean = false,
+    isCompletarEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -93,6 +95,9 @@ fun CartPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
+                .glowWhenEnabled(
+                    if (isCheckoutVisible) isCompletarEnabled else !isCartEmpty
+                )
         ) {
             Text(
                 text = "TOTAL: $${String.format("%.2f", cartTotal)}",

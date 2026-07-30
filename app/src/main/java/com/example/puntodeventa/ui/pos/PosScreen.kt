@@ -157,8 +157,16 @@ fun PosScreen(
                 cartTotal = uiState.cartTotal,
                 onRemoveItem = { cartItemId -> viewModel.removeFromCart(cartItemId) },
                 onItemClick = { viewModel.startEditingItem(it.id) },
-                onCompleteOrder = { viewModel.showCheckout() },
+                onCompleteOrder = {
+                    if (uiState.isCheckoutVisible && viewModel.isCompletarOrdenEnabled()) {
+                        viewModel.showConfirmationModal()
+                    } else if (!uiState.isCheckoutVisible) {
+                        viewModel.showCheckout()
+                    }
+                },
                 isCartEmpty = uiState.cartItems.isEmpty(),
+                isCheckoutVisible = uiState.isCheckoutVisible,
+                isCompletarEnabled = viewModel.isCompletarOrdenEnabled(),
                 modifier = Modifier.weight(0.3f)
             )
         }
