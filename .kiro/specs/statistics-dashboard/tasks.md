@@ -182,21 +182,21 @@ Turns the static v1 summary into an analytics dashboard: interactive trend chart
 comparison, payment-method breakdown and CSV export. No new Gradle dependency â€” charts are drawn on
 `Canvas` so every color resolves from `MaterialTheme.colorScheme`.
 
-- [ ] 11. Payment method capture (schema + checkout)
-  - [ ] 11.1 Create the `PaymentMethod` enum
+- [x] 11. Payment method capture (schema + checkout)
+  - [x] 11.1 Create the `PaymentMethod` enum
     - Create `app/src/main/java/com/example/puntodeventa/data/model/PaymentMethod.kt`
     - Values `CASH("EFECTIVO", "Efectivo")`, `CARD("TARJETA", "Tarjeta")`, `TRANSFER("TRANSFERENCIA", "Transferencia")`
     - `companion object fun fromStorage(value: String?): PaymentMethod` falling back to `CASH` for unknown tokens
     - _Requirements: 14.1, 14.9_
 
-  - [ ] 11.2 Add the `paymentMethod` column and migrate the database
+  - [x] 11.2 Add the `paymentMethod` column and migrate the database
     - Add `@ColumnInfo(defaultValue = "EFECTIVO") val paymentMethod: String = PaymentMethod.CASH.storageValue` to `OrderEntity`
     - Bump `AppDatabase` to `version = 5` and register an explicit `Migration(4, 5)` running
       `ALTER TABLE orders ADD COLUMN paymentMethod TEXT NOT NULL DEFAULT 'EFECTIVO'`
     - Keep `fallbackToDestructiveMigration` as the last-resort path only
     - _Requirements: 14.1, 14.2_
 
-  - [ ] 11.3 Capture the payment method at checkout
+  - [x] 11.3 Capture the payment method at checkout
     - Add `paymentMethod: PaymentMethod = PaymentMethod.CASH` to `CheckoutState`
     - Add `selectPaymentMethod(method)` to `PosViewModel`; relax `isCompletarOrdenEnabled()` so the
       cash-covers-total rule applies only to `PaymentMethod.CASH`
@@ -204,14 +204,14 @@ comparison, payment-method breakdown and CSV export. No new Gradle dependency â€
     - Render a `PaymentMethodPills` row in `CheckoutPanel` above the payment status pills
     - _Requirements: 14.3, 14.4_
 
-- [ ] 12. Data layer for comparison, trend and breakdown
-  - [ ] 12.1 Add the query projections
+- [x] 12. Data layer for comparison, trend and breakdown
+  - [x] 12.1 Add the query projections
     - `data/model/PeriodSummary.kt` (`totalRevenue`, `orderCount`, `customerCount`, plus an `EMPTY` constant)
     - `data/model/PaymentMethodRevenue.kt` (`paymentMethod`, `totalRevenue`, `orderCount`)
     - `data/model/OrderTotalPoint.kt` (`timestamp`, `amount`)
     - _Requirements: 2.8, 2.9, 2.10_
 
-  - [ ] 12.2 Add the DAO flows and repository delegation
+  - [x] 12.2 Add the DAO flows and repository delegation
     - `getPeriodSummaryFlow`, `getPaymentMethodBreakdownFlow` (ORDER BY totalRevenue DESC, paymentMethod ASC),
       `getOrderTotalsFlow` (ORDER BY timestamp ASC) in `OrderDao`
     - Thin delegating wrappers in `OrderRepository`
@@ -222,15 +222,15 @@ comparison, payment-method breakdown and CSV export. No new Gradle dependency â€
     - Extend `app/src/androidTest/java/com/example/puntodeventa/data/local/StatsQueryPropertyTest.kt`
     - **Validates: Requirements 2.9, 14.5, 14.6, 14.9**
 
-- [ ] 13. Sales trend aggregation and chart
-  - [ ] 13.1 Implement `SalesTrendCalculator`
+- [x] 13. Sales trend aggregation and chart
+  - [x] 13.1 Implement `SalesTrendCalculator`
     - Create `ui/stats/SalesTrendCalculator.kt` with `TrendGranularity`, `SalesTrendPoint`,
       `granularityFor(filter, start, end)` and `buildSeries(granularity, start, end, points, zone)`
     - Emit every bucket in range including zero-revenue ones, ascending by `bucketStartMillis`
     - Truncate with `java.time` (`truncatedTo(HOURS)` / `atStartOfDay` / `withDayOfMonth(1)`)
     - _Requirements: 8.3, 8.4, 8.5_
 
-  - [ ] 13.2 Implement the `SalesTrendChart` Canvas composable
+  - [x] 13.2 Implement the `SalesTrendChart` Canvas composable
     - Create `ui/stats/SalesTrendChart.kt` with `ChartMode` (BAR, LINE)
     - Grid lines, Y labels via `formatCompactCurrency`, thinned X labels, rounded bars / gradient line+area
     - Tap-to-select a bucket with a tooltip showing `fullLabel` + currency; tapping the selection clears it
@@ -238,58 +238,58 @@ comparison, payment-method breakdown and CSV export. No new Gradle dependency â€
     - All colors from `MaterialTheme.colorScheme`; text via `rememberTextMeasurer()`
     - _Requirements: 8.1, 8.2, 8.3, 8.6, 8.7, 8.9, 11.7_
 
-  - [ ] 13.3 Replace the placeholder with the chart section
+  - [x] 13.3 Replace the placeholder with the chart section
     - Delete `SalesTrendPlaceholder` and the "GrÃ¡fico en construcciÃ³n" text from `StatsScreen`
     - Add the bar/line mode toggle wired to `onChartModeChange`
     - _Requirements: 8.1, 8.2, 8.8, 8.10_
 
-  - [ ]* 13.4 Write trend property tests (Properties 13, 14, 15)
+  - [x]* 13.4 Write trend property tests (Properties 13, 14, 15)
     - **Property 13: Trend granularity selection**
     - **Property 14: Trend series conservation and ordering**
     - **Property 15: Trend series bucket assignment**
     - Create `app/src/test/java/com/example/puntodeventa/ui/stats/SalesTrendCalculatorPropertyTest.kt`
     - **Validates: Requirements 8.3, 8.4, 8.5**
 
-- [ ] 14. Period-over-period comparison
-  - [ ] 14.1 Implement `MetricDelta` and `computePreviousRange`
+- [x] 14. Period-over-period comparison
+  - [x] 14.1 Implement `MetricDelta` and `computePreviousRange`
     - Create `ui/stats/MetricDelta.kt` with `TrendDirection` and `MetricDelta.of(current, previous, hasComparison)`
     - Add `StatsViewModel.computePreviousRange(filter, start, end): Pair<Long, Long>?` (null for ALL)
     - Never return NaN/Infinity; `previous == 0 && current > 0` â†’ `NO_BASELINE`
     - _Requirements: 13.1, 13.2, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9_
 
-  - [ ] 14.2 Surface the deltas on the metric cards
+  - [x] 14.2 Surface the deltas on the metric cards
     - Query the previous `PeriodSummary` in the ViewModel pipeline and expose the four previous values
     - Add a `MetricDeltaChip` (arrow + percentage + "vs periodo anterior") to each `MetricCard`
     - Hide the indicator when the filter has no baseline
     - _Requirements: 13.3, 13.4, 13.10_
 
-  - [ ]* 14.3 Write comparison property tests (Properties 16, 17)
+  - [x]* 14.3 Write comparison property tests (Properties 16, 17)
     - **Property 16: Metric delta correctness**
     - **Property 17: Previous range shape**
     - Create `MetricDeltaPropertyTest.kt` and `PreviousRangePropertyTest.kt`
     - **Validates: Requirements 13.1, 13.2, 13.4â€“13.9**
 
-- [ ] 15. Payment method breakdown section
-  - [ ] 15.1 Implement the `PaymentMethodDonut` composable
+- [x] 15. Payment method breakdown section
+  - [x] 15.1 Implement the `PaymentMethodDonut` composable
     - Create `ui/stats/PaymentMethodDonut.kt` drawing one `drawArc` stroke per slice with a 2Â° gap
     - Themed palette by slice index (primary, tertiary, secondary, outline); total revenue in the center
     - Legend rows with display name, currency revenue and share percentage
     - Render "Sin ventas en este periodo" when period revenue is 0
     - _Requirements: 14.5, 14.6, 14.7, 14.8, 11.7_
 
-  - [ ] 15.2 Place the breakdown beside the trend chart
+  - [x] 15.2 Place the breakdown beside the trend chart
     - Row with the chart at weight 1.6f and the breakdown at weight 1f
     - Map raw storage tokens through `PaymentMethod.fromStorage`, merging unknown tokens into Efectivo
     - _Requirements: 11.8, 14.9_
 
-- [ ] 16. CSV report export
-  - [ ] 16.1 Implement `StatsCsvBuilder`
+- [x] 16. CSV report export
+  - [x] 16.1 Implement `StatsCsvBuilder`
     - Create `ui/stats/StatsCsvBuilder.kt` with `build(state, generatedAtMillis)` and `escape(field)`
     - UTF-8 BOM; sections RESUMEN / VENTAS POR METODO DE PAGO / TENDENCIA DE VENTAS / PRODUCTOS MAS VENDIDOS
     - Numbers with `Locale.US`, no currency symbol, no thousands separators; empty cell when no baseline
     - _Requirements: 15.4, 15.5, 15.6, 15.7_
 
-  - [ ] 16.2 Wire the export action through the Storage Access Framework
+  - [x] 16.2 Wire the export action through the Storage Access Framework
     - Add `StatsFormatters`/`StatsViewModel.exportFileName()` producing `reporte_ventas_yyyyMMdd_HHmmss.csv`
     - Add the "Exportar Reporte" `IconButton` to the top bar, disabled while `isExporting`
     - `rememberLauncherForActivityResult(CreateDocument("text/csv"))` in `StatsScreen`, mirroring
@@ -299,7 +299,7 @@ comparison, payment-method breakdown and CSV export. No new Gradle dependency â€
     - Show the message once via Toast and call `clearUserMessage()`
     - _Requirements: 15.1, 15.2, 15.3, 15.8, 15.9, 15.10, 16.2, 16.3_
 
-  - [ ]* 16.3 Write CSV property tests (Properties 19, 20)
+  - [x]* 16.3 Write CSV property tests (Properties 19, 20)
     - **Property 19: CSV escaping round-trip**
     - **Property 20: CSV numeric locale independence**
     - Create `app/src/test/java/com/example/puntodeventa/ui/stats/StatsCsvBuilderPropertyTest.kt`

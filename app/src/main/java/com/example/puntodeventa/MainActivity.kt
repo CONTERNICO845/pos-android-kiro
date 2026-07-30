@@ -171,7 +171,10 @@ class MainActivity : ComponentActivity() {
                                 uiState = statsUiState,
                                 onFilterChange = statsViewModel::onFilterChange,
                                 onDateRangeSelected = statsViewModel::onDateRangeSelected,
-                                onDateRangePickerDismissed = statsViewModel::onDateRangePickerDismissed
+                                onDateRangePickerDismissed = statsViewModel::onDateRangePickerDismissed,
+                                onChartModeChange = statsViewModel::onChartModeChange,
+                                onExportUriReceived = statsViewModel::onExportUriReceived,
+                                onUserMessageShown = statsViewModel::clearUserMessage
                             )
                         }
                         NavDestination.Tickets  -> {
