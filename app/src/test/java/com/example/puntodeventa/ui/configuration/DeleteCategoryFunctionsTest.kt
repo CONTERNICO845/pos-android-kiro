@@ -43,7 +43,7 @@ class DeleteCategoryFunctionsTest : FunSpec({
 
         coEvery { categoryRepository.getCategoriesByMenu(menuId) } returns flowOf(emptyList())
 
-        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Act
@@ -65,7 +65,7 @@ class DeleteCategoryFunctionsTest : FunSpec({
 
         coEvery { categoryRepository.getCategoriesByMenu(menuId) } returns flowOf(emptyList())
 
-        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // First open the dialog
@@ -91,7 +91,7 @@ class DeleteCategoryFunctionsTest : FunSpec({
 
         coEvery { categoryRepository.getCategoriesByMenu(menuId) } returns flowOf(emptyList())
 
-        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Act
@@ -113,7 +113,7 @@ class DeleteCategoryFunctionsTest : FunSpec({
         coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
         coEvery { categoryRepository.deleteById(category.id) } returns Unit
 
-        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Act
@@ -140,7 +140,7 @@ class DeleteCategoryFunctionsTest : FunSpec({
         coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
         coEvery { categoryRepository.deleteById(category.id) } throws RuntimeException(errorMessage)
 
-        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+        val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Act

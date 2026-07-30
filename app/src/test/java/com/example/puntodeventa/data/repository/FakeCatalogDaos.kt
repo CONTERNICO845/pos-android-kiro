@@ -61,9 +61,16 @@ class FakeCategoryDao : CategoryDao {
     override fun getCategoriesByMenu(menuId: String): Flow<List<CategoryEntity>> =
         rows.map { all -> all.filter { it.associatedMenuId == menuId } }
 
+    override suspend fun getCategoriesByMenuOnce(menuId: String): List<CategoryEntity> =
+        rows.value.filter { it.associatedMenuId == menuId }
+
     override suspend fun deleteById(id: String) {
         deleteCallCount++
         rows.value = rows.value.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAll() {
+        rows.value = emptyList()
     }
 }
 
@@ -104,6 +111,9 @@ class FakeProductDao : ProductDao {
                 .sortedWith(compareBy({ it.name.lowercase() }, { it.id }))
         }
 
+    override suspend fun getProductsByCategoryOnce(categoryId: String): List<ProductEntity> =
+        rows.value.filter { it.categoryId == categoryId }
+
     /** Mirrors `WHERE categoryId = :categoryId AND isActive = 1`. */
     override fun getActiveProductsByCategory(categoryId: String): Flow<List<ProductEntity>> =
         rows.map { all -> all.filter { it.categoryId == categoryId && it.isActive } }
@@ -111,6 +121,10 @@ class FakeProductDao : ProductDao {
     override suspend fun deleteById(id: String) {
         deleteCallCount++
         rows.value = rows.value.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAll() {
+        rows.value = emptyList()
     }
 }
 
@@ -146,6 +160,10 @@ class FakeCustomizationGroupDao : CustomizationGroupDao {
     override suspend fun deleteById(id: String) {
         rows.value = rows.value.filterNot { it.id == id }
     }
+
+    override suspend fun deleteAll() {
+        rows.value = emptyList()
+    }
 }
 
 // ── CustomizationOptionDao ────────────────────────────────────────────────────
@@ -179,5 +197,9 @@ class FakeCustomizationOptionDao : CustomizationOptionDao {
 
     override suspend fun deleteById(id: String) {
         rows.value = rows.value.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAll() {
+        rows.value = emptyList()
     }
 }

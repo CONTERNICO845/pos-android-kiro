@@ -36,21 +36,27 @@ import kotlinx.coroutines.test.setMain
 private class FakeMenuItemDao : MenuItemDao {
     private val _flow = MutableStateFlow<List<MenuItemEntity>>(emptyList())
     override fun getAllMenuItems(): Flow<List<MenuItemEntity>> = _flow.asStateFlow()
+    override suspend fun getAllMenuItemsOnce(): List<MenuItemEntity> = _flow.value
     override suspend fun insert(item: MenuItemEntity) { /* no-op */ }
     override suspend fun deleteById(id: String) { /* no-op */ }
+    override suspend fun deleteAll() { /* no-op */ }
 }
 
 private class FakeCategoryDao : CategoryDao {
     override fun getCategoriesByMenu(menuId: String): Flow<List<CategoryEntity>> = flowOf(emptyList())
+    override suspend fun getCategoriesByMenuOnce(menuId: String): List<CategoryEntity> = emptyList()
     override suspend fun insert(category: CategoryEntity) { /* no-op */ }
     override suspend fun deleteById(id: String) { /* no-op */ }
+    override suspend fun deleteAll() { /* no-op */ }
 }
 
 private class FakeProductDao : ProductDao {
     override suspend fun insert(product: ProductEntity) { /* no-op */ }
     override fun getProductsByCategory(categoryId: String): Flow<List<ProductEntity>> = flowOf(emptyList())
+    override suspend fun getProductsByCategoryOnce(categoryId: String): List<ProductEntity> = emptyList()
     override fun getActiveProductsByCategory(categoryId: String): Flow<List<ProductEntity>> = flowOf(emptyList())
     override suspend fun deleteById(id: String) { /* no-op */ }
+    override suspend fun deleteAll() { /* no-op */ }
 }
 
 private class FakeCustomizationGroupDao : CustomizationGroupDao {
@@ -58,6 +64,7 @@ private class FakeCustomizationGroupDao : CustomizationGroupDao {
     override fun getGroupsByProduct(productId: String): Flow<List<CustomizationGroupEntity>> = flowOf(emptyList())
     override suspend fun getGroupsByProductOnce(productId: String): List<CustomizationGroupEntity> = emptyList()
     override suspend fun deleteById(id: String) { /* no-op */ }
+    override suspend fun deleteAll() { /* no-op */ }
 }
 
 private class FakeCustomizationOptionDao : CustomizationOptionDao {
@@ -65,6 +72,7 @@ private class FakeCustomizationOptionDao : CustomizationOptionDao {
     override fun getOptionsByGroup(groupId: String): Flow<List<CustomizationOptionEntity>> = flowOf(emptyList())
     override suspend fun getOptionsByGroupOnce(groupId: String): List<CustomizationOptionEntity> = emptyList()
     override suspend fun deleteById(id: String) { /* no-op */ }
+    override suspend fun deleteAll() { /* no-op */ }
 }
 
 // ── Helper: build a ViewModel under a controlled TestScope ───────────────────

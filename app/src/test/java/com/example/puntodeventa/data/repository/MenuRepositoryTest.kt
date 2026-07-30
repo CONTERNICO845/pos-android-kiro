@@ -34,8 +34,10 @@ class MenuRepositoryTest : StringSpec({
             val entity = MenuItemEntity(id = id, emoji = emoji, name = name)
             val dao = object : MenuItemDao {
                 override fun getAllMenuItems(): Flow<List<MenuItemEntity>> = flowOf(listOf(entity))
+                override suspend fun getAllMenuItemsOnce(): List<MenuItemEntity> = listOf(entity)
                 override suspend fun insert(item: MenuItemEntity) {}
                 override suspend fun deleteById(id: String) {}
+                override suspend fun deleteAll() {}
             }
 
             val repo = MenuRepository(dao)
@@ -63,8 +65,10 @@ class MenuRepositoryTest : StringSpec({
             var captured: MenuItemEntity? = null
             val dao = object : MenuItemDao {
                 override fun getAllMenuItems(): Flow<List<MenuItemEntity>> = flowOf(emptyList())
+                override suspend fun getAllMenuItemsOnce(): List<MenuItemEntity> = emptyList()
                 override suspend fun insert(item: MenuItemEntity) { captured = item }
                 override suspend fun deleteById(id: String) {}
+                override suspend fun deleteAll() {}
             }
 
             val repo = MenuRepository(dao)

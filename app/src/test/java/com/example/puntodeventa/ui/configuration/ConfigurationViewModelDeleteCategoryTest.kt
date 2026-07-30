@@ -43,7 +43,7 @@ class ConfigurationViewModelDeleteCategoryTest : FunSpec({
             coEvery { categoryRepository.getCategoriesByMenu(menuId) } returns flowOf(listOf(category))
             coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
 
-            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
 
             // Wait for initial state to stabilize using Turbine
             viewModel.uiState.test {
@@ -95,7 +95,7 @@ class ConfigurationViewModelDeleteCategoryTest : FunSpec({
             coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
             coEvery { categoryRepository.deleteById(category.id) } returns Unit
 
-            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
 
             // Wait for initialization
             viewModel.uiState.test {
@@ -135,7 +135,7 @@ class ConfigurationViewModelDeleteCategoryTest : FunSpec({
             coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
             coEvery { categoryRepository.deleteById(category.id) } returns Unit
 
-            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
 
             // Wait for initialization
             viewModel.uiState.test {
@@ -193,7 +193,7 @@ class ConfigurationViewModelDeleteCategoryTest : FunSpec({
             coEvery { productRepository.getProductsByCategory(category.id) } returns flowOf(emptyList())
             coEvery { categoryRepository.deleteById(category.id) } throws RuntimeException(errorMessage)
 
-            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, menuId)
+            val viewModel = ConfigurationViewModel(categoryRepository, productRepository, mockk(relaxed = true), menuId)
 
             // Wait for initial state to stabilize using Turbine
             viewModel.uiState.test {

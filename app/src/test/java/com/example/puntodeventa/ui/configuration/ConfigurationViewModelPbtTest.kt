@@ -45,8 +45,13 @@ private class MinCategoryDao : CategoryDao {
     }
     override fun getCategoriesByMenu(menuId: String): Flow<List<CategoryEntity>> =
         data.map { all -> all.filter { it.associatedMenuId == menuId } }
+    override suspend fun getCategoriesByMenuOnce(menuId: String): List<CategoryEntity> =
+        data.value.filter { it.associatedMenuId == menuId }
     override suspend fun deleteById(id: String) {
         data.value = data.value.filterNot { it.id == id }
+    }
+    override suspend fun deleteAll() {
+        data.value = emptyList()
     }
 }
 
@@ -57,10 +62,15 @@ private class MinProductDao : ProductDao {
     }
     override fun getProductsByCategory(categoryId: String): Flow<List<ProductEntity>> =
         data.map { all -> all.filter { it.categoryId == categoryId }.sortedBy { it.name.lowercase() } }
+    override suspend fun getProductsByCategoryOnce(categoryId: String): List<ProductEntity> =
+        data.value.filter { it.categoryId == categoryId }
     override fun getActiveProductsByCategory(categoryId: String): Flow<List<ProductEntity>> =
         data.map { all -> all.filter { it.categoryId == categoryId && it.isActive } }
     override suspend fun deleteById(id: String) {
         data.value = data.value.filterNot { it.id == id }
+    }
+    override suspend fun deleteAll() {
+        data.value = emptyList()
     }
 }
 
@@ -70,6 +80,7 @@ private class MinGroupDao : CustomizationGroupDao {
         MutableStateFlow(emptyList())
     override suspend fun getGroupsByProductOnce(productId: String): List<CustomizationGroupEntity> = emptyList()
     override suspend fun deleteById(id: String) {}
+    override suspend fun deleteAll() {}
 }
 
 private class MinOptionDao : CustomizationOptionDao {
@@ -78,6 +89,7 @@ private class MinOptionDao : CustomizationOptionDao {
         MutableStateFlow(emptyList())
     override suspend fun getOptionsByGroupOnce(groupId: String): List<CustomizationOptionEntity> = emptyList()
     override suspend fun deleteById(id: String) {}
+    override suspend fun deleteAll() {}
 }
 
 // ── Arbitraries ───────────────────────────────────────────────────────────────
@@ -118,6 +130,7 @@ class ConfigurationViewModelPbtTest : FunSpec({
         ConfigurationViewModel(
             CategoryRepository(catDao),
             ProductRepository(prodDao, MinGroupDao(), MinOptionDao(), mockk(relaxed = true)),
+            mockk(relaxed = true),
             MENU_ID
         )
 
